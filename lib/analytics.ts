@@ -16,10 +16,15 @@ interface NovusGlobal {
   track?: (event: string, props?: Props) => void;
 }
 
+interface PendoGlobal {
+  track?: (event: string, props?: Props) => void;
+}
+
 declare global {
   interface Window {
     novus?: NovusGlobal;
     Novus?: NovusGlobal;
+    pendo?: PendoGlobal;
   }
 }
 
@@ -29,6 +34,11 @@ export function track(event: EventName, props: Props = {}): void {
   try {
     const novus = window.novus ?? window.Novus;
     novus?.track?.(event, payload);
+  } catch {
+    // never let analytics break the app
+  }
+  try {
+    window.pendo?.track?.(event, props);
   } catch {
     // never let analytics break the app
   }

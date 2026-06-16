@@ -101,7 +101,7 @@ export default function Shipgrade() {
 
   useEffect(() => () => clearInterval(stepTimer.current), []);
 
-  async function run(target: string) {
+  async function run(target: string, source: "form" | "example" = "form") {
     const trimmed = target.trim();
     if (!trimmed || status === "loading") return;
 
@@ -109,7 +109,7 @@ export default function Shipgrade() {
     setError("");
     setResult(null);
     setStep(0);
-    track("analyze_submitted", { url: trimmed });
+    track("analyze_submitted", { url: trimmed, source });
 
     let i = 0;
     clearInterval(stepTimer.current);
@@ -126,17 +126,29 @@ export default function Shipgrade() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? "Couldn't grade that page.");
-      setResult(data as AnalysisResult);
+      const analysisResult = data as AnalysisResult;
+      setResult(analysisResult);
       setStatus("done");
+
+      const dimScores: Record<string, number> = {};
+      for (const dim of analysisResult.dimensions) {
+        dimScores[`${dim.key}Score`] = dim.score;
+      }
       track("analyze_succeeded", {
-        url: data.finalUrl,
-        grade: data.grade,
-        score: data.overallScore,
+        url: analysisResult.finalUrl,
+        grade: analysisResult.grade,
+        score: analysisResult.overallScore,
+        band: analysisResult.band,
+        usedLLM: analysisResult.meta.usedLLM,
+        wordCount: analysisResult.meta.wordCount,
+        headingCount: analysisResult.meta.headingCount,
+        ...dimScores,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong.";
+      setError(errorMessage);
       setStatus("error");
-      track("analyze_failed", { url: trimmed });
+      track("analyze_failed", { url: trimmed, errorMessage });
     } finally {
       clearInterval(stepTimer.current);
     }
@@ -150,15 +162,20 @@ export default function Shipgrade() {
   function useExample(example: string) {
     setUrl(example);
     track("example_clicked", { url: example });
-    run(example);
+    run(example, "example");
   }
 
   function reset() {
+    track("analyze_reset", {
+      previousUrl: result?.finalUrl,
+      previousGrade: result?.grade,
+      previousScore: result?.overallScore,
+      previousBand: result?.band,
+    });
     setStatus("idle");
     setResult(null);
     setError("");
     setUrl("");
-    track("analyze_reset", {});
     requestAnimationFrame(() => inputRef.current?.focus());
   }
 
@@ -174,7 +191,13 @@ export default function Shipgrade() {
     } catch {
       // clipboard unavailable; ignore
     }
-    track("result_shared", { grade: result.grade });
+    track("result_shared", {
+      grade: result.grade,
+      score: result.overallScore,
+      band: result.band,
+      url: result.finalUrl,
+      usedLLM: result.meta.usedLLM,
+    });
   }
 
   const showHero = status === "idle" || status === "error";
