@@ -12,18 +12,15 @@ type EventName =
 
 type Props = Record<string, string | number | boolean | null | undefined>;
 
-interface NovusGlobal {
-  track?: (event: string, props?: Props) => void;
-}
-
+// Novus ships as the Pendo web SDK, which exposes `window.pendo` with a
+// `track(type, metadata)` method. The agent stubs `track` into a queue before
+// the script loads, so calling it early is safe — events flush on init.
 interface PendoGlobal {
-  track?: (event: string, props?: Props) => void;
+  track?: (type: string, metadata?: Props) => void;
 }
 
 declare global {
   interface Window {
-    novus?: NovusGlobal;
-    Novus?: NovusGlobal;
     pendo?: PendoGlobal;
   }
 }
@@ -32,13 +29,7 @@ export function track(event: EventName, props: Props = {}): void {
   if (typeof window === "undefined") return;
   const payload = { ...props, ts: Date.now() };
   try {
-    const novus = window.novus ?? window.Novus;
-    novus?.track?.(event, payload);
-  } catch {
-    // never let analytics break the app
-  }
-  try {
-    window.pendo?.track?.(event, props);
+    window.pendo?.track?.(event, payload);
   } catch {
     // never let analytics break the app
   }
