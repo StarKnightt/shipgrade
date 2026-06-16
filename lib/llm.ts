@@ -10,18 +10,38 @@ export interface LlmEnhancement {
 }
 
 interface LlmInput {
-  url: string;
+  site: string;
   title: string | null;
   description: string | null;
   grade: string;
   overallScore: number;
-  weakest: { label: string; score: number };
-  strongest: { label: string; score: number };
+  scores: Record<string, number>;
+  biggestWeakness: { area: string; issue: string };
 }
 
 export function isLlmEnabled(): boolean {
   return Boolean(process.env.OPENAI_API_KEY);
 }
+
+function hostFromUrl(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+const SYSTEM_PROMPT = `You are a witty, sharp product leader reviewing a product's landing page, in the spirit of a Mind the Product judge. You are honest and specific, never generic, never mean. You write like a human, not a marketer.
+
+Respond with ONLY a JSON object: {"verdict": string, "roast": string}
+
+- "verdict": ONE punchy sentence (max 18 words) on whether a stranger instantly "gets" this product. Reference the actual page — never filler like "clarity is lacking" or "could be improved".
+- "roast": ONE funny-but-fair line (max 16 words) a founder would screenshot and share. Aim it at this page's biggest weakness. Punchy beats polite.
+
+Voice examples (match this energy, do not copy):
+{"verdict":"Crisp promise, obvious who it's for — this one earns the click.","roast":"Gorgeous page that guards what it actually does like a state secret."}
+{"verdict":"Looks sharp, but that headline could describe ten different products.","roast":"'Empower your workflow' — my toaster could've written that headline."}
+{"verdict":"Strong proof and a clear CTA, just bring the value prop forward.","roast":"Buried the lede so deep I needed a shovel and a headlamp."}`;
 
 export async function enhanceWithLlm(
   result: AnalysisResult,
@@ -32,18 +52,20 @@ export async function enhanceWithLlm(
   const baseUrl = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1";
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
-  const sorted = [...result.dimensions].sort((a, b) => a.score - b.score);
+  const weakest = [...result.dimensions].sort((a, b) => a.score - b.score)[0];
+  const issue =
+    weakest.findings.find((f) => f.type === "fix")?.text ?? weakest.summary;
+  const scores: Record<string, number> = {};
+  for (const d of result.dimensions) scores[d.label] = d.score;
+
   const input: LlmInput = {
-    url: result.finalUrl,
+    site: hostFromUrl(result.finalUrl),
     title: result.title,
     description: result.description,
     grade: result.grade,
     overallScore: result.overallScore,
-    weakest: { label: sorted[0].label, score: sorted[0].score },
-    strongest: {
-      label: sorted[sorted.length - 1].label,
-      score: sorted[sorted.length - 1].score,
-    },
+    scores,
+    biggestWeakness: { area: weakest.label, issue },
   };
 
   const controller = new AbortController();
@@ -59,22 +81,11 @@ export async function enhanceWithLlm(
       },
       body: JSON.stringify({
         model,
-        temperature: 0.8,
+        temperature: 0.9,
         response_format: { type: "json_object" },
         messages: [
-          {
-            role: "system",
-            content:
-              "You are a sharp, witty product leader reviewing a landing page. " +
-              "You are honest but never cruel, and always specific. " +
-              "Respond ONLY with JSON: {\"verdict\": string, \"roast\": string}. " +
-              "verdict: one punchy sentence (max 22 words) summarizing the page's product clarity. " +
-              "roast: one funny-but-fair line (max 22 words) a founder would screenshot and share.",
-          },
-          {
-            role: "user",
-            content: JSON.stringify(input),
-          },
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: JSON.stringify(input) },
         ],
       }),
     });
