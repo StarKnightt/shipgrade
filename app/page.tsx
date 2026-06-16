@@ -45,7 +45,7 @@ export default function Home() {
 
           <div className="flex flex-col items-center gap-1.5 sm:items-end">
             <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-              World Product Day 2026 — Everyone Ships Now
+              World Product Day 2026 · Everyone Ships Now
             </span>
             <span className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />

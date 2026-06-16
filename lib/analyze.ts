@@ -285,7 +285,7 @@ function buildDimension(
   const s = clamp(score);
   const summary =
     s >= 80
-      ? "Strong — this is working."
+      ? "Strong. This is working."
       : s >= 60
         ? "Decent, with room to sharpen."
         : s >= 40
@@ -314,7 +314,7 @@ function scoreValueProp(x: Extracted): DimensionResult {
     score -= 35;
     findings.push({
       type: "fix",
-      text: "No <h1> headline found. Visitors can't tell what this is at a glance — lead with one bold sentence that says what you do.",
+      text: "No <h1> headline found. Visitors can't tell what this is at a glance. Lead with one bold sentence that says what you do.",
     });
   } else {
     const words = h1.split(/\s+/).length;
@@ -322,13 +322,13 @@ function scoreValueProp(x: Extracted): DimensionResult {
       score += 18;
       findings.push({
         type: "win",
-        text: `Your headline is a punchy ${words} words — easy to read in one breath.`,
+        text: `Your headline is a punchy ${words} words, easy to read in one breath.`,
       });
     } else if (words > 12) {
       score -= 12;
       findings.push({
         type: "fix",
-        text: `Your headline runs ${words} words. Cut it to under 12 — a hero line should be a hook, not a paragraph.`,
+        text: `Your headline runs ${words} words. Cut it to under 12, a hero line should be a hook, not a paragraph.`,
       });
     } else {
       score -= 6;
@@ -354,7 +354,7 @@ function scoreValueProp(x: Extracted): DimensionResult {
     score -= 10;
     findings.push({
       type: "fix",
-      text: "No meta description. That's the line Google and social shares show — write one clear sentence about what you do.",
+      text: "No meta description. That's the line Google and social shares show, so write one clear sentence about what you do.",
     });
   }
 
@@ -410,7 +410,7 @@ function scoreAudience(x: Extracted): DimensionResult {
     score -= 14;
     findings.push({
       type: "fix",
-      text: "The copy never says who this is for. 'Built for [specific role]' beats 'for everyone' every time — name your person.",
+      text: "The copy never says who this is for. 'Built for [specific role]' beats 'for everyone' every time. Name your person.",
     });
   }
 
@@ -471,7 +471,7 @@ function scoreDifferentiation(x: Extracted): DimensionResult {
     score -= 14;
     findings.push({
       type: "fix",
-      text: "Nothing says why you over the obvious alternative. Add one sharp contrast line — 'Unlike spreadsheets, …'.",
+      text: "Nothing says why you over the obvious alternative. Add one sharp contrast line, like 'Unlike spreadsheets, …'.",
     });
   }
 
@@ -479,7 +479,7 @@ function scoreDifferentiation(x: Extracted): DimensionResult {
     score += 14;
     findings.push({
       type: "win",
-      text: "Concrete numbers show up in your copy — specificity reads as credibility.",
+      text: "Concrete numbers show up in your copy, and specificity reads as credibility.",
     });
   } else {
     score -= 8;
@@ -616,7 +616,7 @@ function scoreCraft(x: Extracted): DimensionResult {
     score -= 18;
     findings.push({
       type: "fix",
-      text: "Missing <title> tag — the browser tab and search result have nothing to show.",
+      text: "Missing <title> tag, so the browser tab and search result have nothing to show.",
     });
   } else if (x.title.length > 65) {
     score -= 6;
@@ -673,7 +673,7 @@ function scoreCraft(x: Extracted): DimensionResult {
   if (findings.length === 0) {
     findings.push({
       type: "win",
-      text: "Clean structure and tight copy — the fundamentals are in place.",
+      text: "Clean structure and tight copy. The fundamentals are in place.",
     });
   }
   return buildDimension("craft", score, findings);
@@ -703,7 +703,7 @@ function gradeFromScore(score: number): {
 
 const VERDICTS: Record<AnalysisResult["band"], string> = {
   excellent:
-    "Sharp. A stranger lands here and gets it in five seconds — that's the whole game.",
+    "Sharp. A stranger lands here and gets it in five seconds, and that's the whole game.",
   good: "There's a real product here. Tighten a couple of things and it sings.",
   mixed:
     "The bones are good, but the message is hiding. Right now visitors have to work to understand you.",

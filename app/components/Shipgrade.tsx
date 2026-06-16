@@ -183,7 +183,7 @@ export default function Shipgrade() {
     if (!result) return;
     const text = `${result.grade} (${result.overallScore}/100) for ${hostOf(
       result.finalUrl,
-    )} — graded by Shipgrade.\n${result.verdict}`;
+    )}, graded by Shipgrade.\n${result.verdict}`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -208,7 +208,7 @@ export default function Shipgrade() {
         <section className="animate-fade-up text-center">
           <span className="inline-flex -rotate-1 items-center gap-2 rounded-full border border-accent/45 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            World Product Day — Everyone Ships Now
+            World Product Day · Everyone Ships Now
           </span>
 
           <h1 className="mx-auto mt-6 max-w-4xl font-serif text-[2.5rem] font-semibold leading-[1.04] tracking-tight sm:text-6xl lg:text-[4.25rem]">
@@ -217,8 +217,8 @@ export default function Shipgrade() {
           </h1>
 
           <p className="text-pretty mx-auto mt-5 max-w-xl text-base leading-7 text-muted sm:text-lg">
-            Product page, portfolio, or marketing site — get a brutally specific
-            critique in about 30 seconds.
+            Paste your product or SaaS page and get a brutally specific critique
+            in about 30 seconds.
           </p>
 
           <form
