@@ -1,21 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Hanken_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
 import PendoInitializer from "./components/PendoInitializer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+});
+
+const hanken = Hanken_Grotesk({
+  variable: "--font-hanken",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const spaceMono = Space_Mono({
+  variable: "--font-space-mono",
   subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
-const title = "Shipgrade — Grade your product page in 30 seconds";
+const title = "Shipgrade — Grade your landing page in 30 seconds";
 const description =
-  "Paste any product URL and get a ruthless, specific product critique: value prop, audience, differentiation, CTA, trust, and craft — graded instantly.";
+  "Paste any URL — product page, portfolio, or landing page — and get a ruthless, specific critique: value prop, audience, differentiation, CTA, trust, and craft. Graded instantly.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://shipgrade.app"),
@@ -50,7 +57,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${hanken.variable} ${spaceMono.variable} h-full antialiased`}
     >
       <head>
         <script

@@ -203,30 +203,29 @@ export default function Shipgrade() {
   const showHero = status === "idle" || status === "error";
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-5 py-12 sm:py-20">
+    <div className="mx-auto w-full max-w-6xl px-5 pt-9 pb-20 sm:pt-12 sm:pb-28">
       {showHero && (
         <section className="animate-fade-up text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-(--border-strong) bg-surface px-3.5 py-1.5 text-xs font-medium tracking-wide text-muted">
+          <span className="inline-flex -rotate-1 items-center gap-2 rounded-full border border-accent/45 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            World Product Day · Everyone Ships Now
+            World Product Day — Everyone Ships Now
           </span>
 
-          <h1 className="text-balance mx-auto mt-7 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
-            Grade your product page
-            <br className="hidden sm:block" /> before your users do.
+          <h1 className="mx-auto mt-6 max-w-4xl font-serif text-[2.5rem] font-semibold leading-[1.04] tracking-tight sm:text-6xl lg:text-[4.25rem]">
+            <span className="block">Grade your landing page</span>
+            <span className="block italic">before your users do.</span>
           </h1>
 
           <p className="text-pretty mx-auto mt-5 max-w-xl text-base leading-7 text-muted sm:text-lg">
-            Paste any product URL. Get a brutally specific, dimension-by-dimension
-            critique in about 30 seconds — the same questions a sharp product
-            reviewer would ask.
+            Product page, portfolio, or marketing site — get a brutally specific
+            critique in about 30 seconds.
           </p>
 
           <form
             onSubmit={onSubmit}
-            className="mx-auto mt-9 flex max-w-xl flex-col gap-3 sm:flex-row"
+            className="mx-auto mt-7 flex max-w-2xl flex-col gap-3 sm:flex-row"
           >
-            <div className="flex flex-1 items-center gap-2 rounded-xl border border-(--border-strong) bg-surface px-4 transition-colors focus-within:border-accent">
+            <div className="flex flex-1 items-center gap-2 rounded-xl border border-(--border-strong) bg-surface px-4 shadow-sm transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20">
               <span className="select-none font-mono text-sm text-muted">
                 https://
               </span>
@@ -240,24 +239,27 @@ export default function Shipgrade() {
                 spellCheck={false}
                 aria-label="Product URL to grade"
                 placeholder="yourproduct.com"
-                className="h-13 w-full bg-transparent py-3.5 text-base text-foreground outline-none placeholder:text-muted/60"
+                className="h-14 w-full bg-transparent py-3.5 text-base text-foreground outline-none placeholder:text-muted/55"
               />
             </div>
             <button
               type="submit"
-              className="h-13 shrink-0 rounded-xl bg-accent px-6 py-3.5 text-base font-semibold text-accent-ink transition-transform hover:scale-[1.02] active:scale-95"
+              className="group flex h-14 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-base font-semibold text-accent-ink shadow-sm transition-transform hover:scale-[1.02] active:scale-95"
             >
               Grade it
+              <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
+                →
+              </span>
             </button>
           </form>
 
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm text-muted">
-            <span>Try</span>
+            <span className="font-mono text-xs uppercase tracking-wide">Try</span>
             {EXAMPLES.map((ex) => (
               <button
                 key={ex}
                 onClick={() => useExample(ex)}
-                className="rounded-full border border-(--border) bg-surface px-3 py-1 font-mono text-xs text-foreground transition-colors hover:border-accent hover:text-accent"
+                className="rounded-full border border-(--border-strong) bg-surface px-3 py-1 font-mono text-xs text-foreground transition-colors hover:border-accent hover:text-accent"
               >
                 {ex}
               </button>
@@ -268,9 +270,9 @@ export default function Shipgrade() {
             No sign-up. Works on any public URL.
           </p>
 
-          <div className="mx-auto mt-12 flex max-w-3xl flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-(--border) pt-6 text-xs text-muted">
-            <span className="font-mono uppercase tracking-widest">
-              Grades 6 things
+          <div className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-x-5 gap-y-2.5 border-t border-(--border) pt-7 text-xs text-muted">
+            <span className="font-mono uppercase tracking-[0.18em] text-foreground/70">
+              The rubric
             </span>
             {GRADED_DIMENSIONS.map((d) => (
               <span key={d} className="inline-flex items-center gap-1.5">
@@ -283,7 +285,7 @@ export default function Shipgrade() {
           {status === "error" && (
             <p
               role="alert"
-              className="mx-auto mt-6 max-w-xl rounded-lg border border-grade-poor/40 bg-grade-poor/10 px-4 py-3 text-sm text-grade-poor"
+              className="mx-auto mt-7 max-w-xl rounded-lg border border-grade-poor/45 bg-grade-poor/10 px-4 py-3 text-sm text-grade-poor"
             >
               {error}
             </p>
@@ -307,15 +309,18 @@ export default function Shipgrade() {
 
 function LoadingState({ step, url }: { step: number; url: string }) {
   return (
-    <section className="animate-fade-up mx-auto max-w-xl py-16 text-center">
-      <div
-        className="mx-auto h-12 w-12 rounded-full border-2 border-(--border-strong) animate-spin-slow"
-        style={{ borderTopColor: "var(--accent)" }}
-      />
-      <p className="mt-6 font-mono text-sm text-muted">
+    <section className="animate-fade-up mx-auto max-w-md py-20 text-center">
+      <div className="relative mx-auto grid h-28 w-28 place-items-center">
+        <div className="absolute inset-0 animate-spin-slow rounded-full border-2 border-dashed border-(--border-strong)" />
+        <div className="absolute inset-2 rounded-full border border-(--border)" />
+        <span className="font-mono text-sm font-bold text-accent">
+          {step + 1}/{LOADING_STEPS.length}
+        </span>
+      </div>
+      <p className="mt-7 font-mono text-xs uppercase tracking-[0.18em] text-muted">
         {hostOf(url || "your page")}
       </p>
-      <p className="mt-2 text-lg font-medium text-foreground">
+      <p className="mt-2 font-serif text-xl font-medium text-foreground">
         {LOADING_STEPS[step]}…
       </p>
       <div className="mx-auto mt-6 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-surface-2">
@@ -328,26 +333,28 @@ function LoadingState({ step, url }: { step: number; url: string }) {
   );
 }
 
-function GradeGauge({ result }: { result: AnalysisResult }) {
+function GradeSeal({ result }: { result: AnalysisResult }) {
   const color = bandColor(result.band);
-  const count = useCountUp(result.overallScore, 1100, 150);
-  const angle = count * 3.6;
+  const count = useCountUp(result.overallScore, 1100, 220);
   return (
-    <div
-      className="relative grid h-36 w-36 shrink-0 place-items-center rounded-full"
-      style={{
-        background: `conic-gradient(${color} ${angle}deg, var(--surface-2) ${angle}deg)`,
-      }}
-    >
-      <div className="absolute inset-[10px] rounded-full bg-background" />
-      <div className="relative text-center">
-        <div
-          className="font-mono text-5xl font-bold leading-none"
+    <div className="shrink-0">
+      <div
+        className="animate-stamp relative grid h-32 w-32 place-items-center rounded-full border-[3px]"
+        style={{ borderColor: color }}
+      >
+        <span
+          className="absolute inset-[7px] rounded-full border border-dashed"
+          style={{ borderColor: color, opacity: 0.45 }}
+        />
+        <span
+          className="font-serif text-6xl font-semibold leading-none"
           style={{ color }}
         >
           {result.grade}
-        </div>
-        <div className="mt-1.5 font-mono text-xs text-muted">{count}/100</div>
+        </span>
+      </div>
+      <div className="mt-3 text-center font-mono text-xs text-muted">
+        {count} / 100
       </div>
     </div>
   );
@@ -366,30 +373,37 @@ function Scorecard({
 }) {
   return (
     <section className="animate-fade-up">
-      <div className="overflow-hidden rounded-2xl border border-(--border-strong) bg-surface">
-        <div className="flex flex-col items-center gap-6 p-6 text-center sm:flex-row sm:items-center sm:gap-8 sm:p-8 sm:text-left">
-          <GradeGauge result={result} />
+      <div className="overflow-hidden rounded-2xl border border-(--border-strong) bg-surface shadow-sm">
+        <div className="flex flex-col items-center gap-7 p-6 text-center sm:flex-row sm:items-start sm:gap-9 sm:p-9 sm:text-left">
+          <GradeSeal result={result} />
 
           <div className="flex flex-col">
-            <a
-              href={result.finalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-sm text-muted transition-colors hover:text-accent"
-            >
-              {hostOf(result.finalUrl)} ↗
-            </a>
-            <p className="text-pretty mt-2 text-xl font-medium leading-8 sm:text-2xl">
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 sm:justify-start">
+              <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+                Report card
+              </span>
+              <span className="text-muted">·</span>
+              <a
+                href={result.finalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-[11px] uppercase tracking-[0.12em] text-accent transition-opacity hover:opacity-70"
+              >
+                {hostOf(result.finalUrl)} ↗
+              </a>
+            </div>
+
+            <p className="text-pretty mt-2.5 font-serif text-2xl font-medium leading-snug sm:text-[1.85rem]">
               {result.verdict}
             </p>
 
             {result.roast && (
-              <p className="text-pretty mt-3 border-l-2 border-accent pl-3 text-sm italic text-muted">
+              <p className="text-pretty mt-4 border-l-2 border-accent pl-3.5 font-serif text-base italic leading-7 text-muted">
                 “{result.roast}”
               </p>
             )}
 
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-muted sm:justify-start">
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs text-muted sm:justify-start">
               <Chip>{result.meta.wordCount.toLocaleString()} words</Chip>
               <Chip>{result.meta.headingCount} headings</Chip>
               <Chip accent>
@@ -406,10 +420,10 @@ function Scorecard({
         ))}
       </div>
 
-      <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+      <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <button
           onClick={onReset}
-          className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-accent-ink transition-transform hover:scale-[1.02] active:scale-95"
+          className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-accent-ink shadow-sm transition-transform hover:scale-[1.02] active:scale-95"
         >
           Grade another page
         </button>
@@ -434,7 +448,7 @@ function Chip({
   return (
     <span
       className={`rounded-full border px-2.5 py-1 font-mono ${
-        accent ? "border-accent text-accent" : "border-(--border)"
+        accent ? "border-accent text-accent" : "border-(--border-strong)"
       }`}
     >
       {children}
@@ -447,7 +461,7 @@ function DimensionCard({ dim, delay }: { dim: DimensionResult; delay: number }) 
   const count = useCountUp(dim.score, 850, delay);
 
   return (
-    <div className="rounded-2xl border border-(--border) bg-surface p-5 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-(--border-strong)">
+    <div className="rounded-2xl border border-(--border) bg-surface p-5 shadow-sm transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <span
@@ -456,17 +470,20 @@ function DimensionCard({ dim, delay }: { dim: DimensionResult; delay: number }) 
           >
             <DimensionIcon dimension={dim.key} />
           </span>
-          <h3 className="text-base font-semibold">{dim.label}</h3>
+          <h3 className="text-base font-semibold tracking-tight">{dim.label}</h3>
         </div>
-        <span className="font-mono text-lg font-bold" style={{ color }}>
-          {count}
+        <span className="flex items-baseline gap-0.5">
+          <span className="font-mono text-2xl font-bold" style={{ color }}>
+            {count}
+          </span>
+          <span className="font-mono text-[11px] text-muted">/100</span>
         </span>
       </div>
-      <p className="mt-2 text-sm text-muted">{dim.blurb}</p>
+      <p className="mt-2 text-sm leading-6 text-muted">{dim.blurb}</p>
 
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+      <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
         <div
-          className="h-full rounded-full"
+          className="h-full rounded-full transition-[width] duration-500"
           style={{ width: `${count}%`, background: color }}
         />
       </div>
@@ -486,9 +503,9 @@ function FindingRow({ finding }: { finding: Finding }) {
     <li className="flex gap-2.5 text-sm leading-6">
       <span
         aria-hidden
-        className="mt-0.5 shrink-0 font-mono text-xs"
+        className="mt-px shrink-0 font-mono text-sm font-bold"
         style={{
-          color: isWin ? "var(--grade-excellent)" : "var(--grade-mixed)",
+          color: isWin ? "var(--grade-excellent)" : "var(--accent)",
         }}
       >
         {isWin ? "✓" : "→"}
@@ -505,7 +522,7 @@ function DimensionIcon({ dimension }: { dimension: DimensionKey }) {
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 2,
+    strokeWidth: 1.75,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
     "aria-hidden": true,
