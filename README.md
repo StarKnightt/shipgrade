@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Shipgrade
 
-## Getting Started
+**Grade your product page before your users do.**
 
-First, run the development server:
+Paste any product URL and get a ruthless, specific, dimension-by-dimension
+product critique in about 30 seconds — the same questions a sharp product
+reviewer would ask in the first five seconds.
+
+Built for **World Product Day 2026 — Everyone Ships Now**. Measured with
+**Novus**.
+
+## What it grades
+
+Shipgrade scores six dimensions that decide whether a stranger "gets it":
+
+| Dimension | The question it answers |
+| --- | --- |
+| **Value Proposition** | Can a stranger tell what this is in five seconds? |
+| **Audience Clarity** | Is it obvious who this is for? |
+| **Differentiation** | Does it say why you over the alternatives? |
+| **Call to Action** | Is there one clear next step? |
+| **Trust & Proof** | Is there any reason to believe you? |
+| **Messaging Craft** | Is the copy tight, or a wall of jargon? |
+
+Each dimension gets a 0–100 score and specific, actionable findings — wins to
+keep and fixes to make. The six roll up into an overall grade (A+ to F).
+
+## How it works
+
+The server fetches the page and extracts the signals a product reviewer reads
+first: the headline, meta description, headings, calls-to-action, social proof,
+and the shape of the copy. A **deterministic scoring engine** turns those
+signals into grades — no API key, no per-request cost, no rate limits.
+
+An **optional LLM layer** sharpens the verdict and adds a shareable one-liner
+when an OpenAI-compatible API key is present. The app is fully functional
+without it.
+
+## Tech
+
+- **Next.js 16** (App Router) + **React 19**
+- **Tailwind CSS v4**
+- **TypeScript**
+- Deployed on **Vercel**, instrumented with **Novus**
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Optional: AI-enhanced critique
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy `.env.example` to `.env.local` and add an OpenAI-compatible key. Without
+one, Shipgrade runs entirely on its built-in heuristic engine.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cp .env.example .env.local
+```
