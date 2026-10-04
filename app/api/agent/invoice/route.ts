@@ -33,6 +33,21 @@ export async function POST(request: Request) {
   });
   try {
     const invoice = await executor.call("create_invoice", args);
+    // The toolkit reports PayPal failures as { ok: false, ... } instead of throwing.
+    if (invoice.ok === false) {
+      const status = typeof invoice.status === "number" ? invoice.status : null;
+      const message = typeof invoice.message === "string" ? invoice.message : "PayPal rejected the invoice";
+      return NextResponse.json(
+        {
+          error:
+            status === 403
+              ? "This PayPal app lacks the Invoicing permission. Enable Invoicing for the app in the PayPal developer dashboard."
+              : message,
+          paypalStatus: status,
+        },
+        { status: 502 },
+      );
+    }
     return NextResponse.json({ status: "draft", simulated: executor.simulated, invoice });
   } catch (err) {
     return upstreamError(err);
