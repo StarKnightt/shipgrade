@@ -154,6 +154,24 @@ describe("provision", () => {
     expect(rejection && "content" in rejection && rejection.content).toMatch(/REJECTED by Shipgrade guard/);
   });
 
+  it("streams each turn and step to onEvent as it happens", async () => {
+    const approved = proposal();
+    const { executor } = mockExecutor();
+    const { llm } = scriptedLlm([
+      [toolCall("create_product", { name: "Acme Notes", type: "SERVICE" })],
+      [
+        toolCall("create_subscription_plan", createPlanArgs(approved.plans[0], PRODUCT_CREATED.id), "s"),
+        toolCall("create_subscription_plan", createPlanArgs(approved.plans[1], PRODUCT_CREATED.id), "p"),
+      ],
+    ]);
+    const events: string[] = [];
+    const res = await provision(approved, executor, llm, {
+      onEvent: (e) => events.push(e.type === "thinking" ? `turn ${e.turn}` : e.step.tool),
+    });
+    expect(events).toEqual(["turn 1", "create_product", "turn 2", "create_subscription_plan", "create_subscription_plan"]);
+    expect(events.filter((e) => !e.startsWith("turn"))).toHaveLength(res.steps.length);
+  });
+
   it("completes plans the agent forgot", async () => {
     const { executor } = mockExecutor();
     const { llm } = scriptedLlm([[toolCall("create_product", { name: "Acme Notes", type: "SERVICE" })], "All done!"]);

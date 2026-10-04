@@ -271,15 +271,28 @@ function approveLink(res: Record<string, unknown>): string | null {
   return links.find((l) => l.rel === "approve" || l.rel === "payer-action")?.href ?? null;
 }
 
+/** Progress events, emitted as they happen so the UI can stream the run. */
+export type ProvisionEvent =
+  | { type: "thinking"; turn: number }
+  | { type: "step"; step: ProvisionStep };
+
 export async function provision(
   approvedInput: CatalogProposal,
   executor: ToolExecutor,
   llm: ChatClient | null,
-  opts: { maxTurns?: number; urls?: { returnUrl: string; cancelUrl: string } } = {},
+  opts: {
+    maxTurns?: number;
+    urls?: { returnUrl: string; cancelUrl: string };
+    onEvent?: (event: ProvisionEvent) => void;
+  } = {},
 ): Promise<ProvisionResult> {
   const approved = CatalogProposalSchema.parse(approvedInput);
   const state: GuardState = { productId: null, createdPlanTiers: new Set(), createdOrderTiers: new Set() };
   const steps: ProvisionStep[] = [];
+  const record = (step: ProvisionStep) => {
+    steps.push(step);
+    opts.onEvent?.({ type: "step", step });
+  };
   const plans = new Map<string, ProvisionedPlan>(
     approved.plans.map((p) => [p.tierId, { ...p, paypalPlanId: null, orderId: null, approveUrl: null }]),
   );
@@ -291,7 +304,7 @@ export async function provision(
   ): Promise<{ ok: boolean; message: string; result?: Record<string, unknown> }> => {
     const verdict = checkToolCall(name, args, approved, state);
     if (!verdict.ok) {
-      steps.push({ tool: name, by, args, status: "rejected", message: verdict.reason });
+      record({ tool: name, by, args, status: "rejected", message: verdict.reason });
       return { ok: false, message: `REJECTED by Shipgrade guard: ${verdict.reason}` };
     }
     try {
@@ -309,11 +322,11 @@ export async function provision(
         p.orderId = id;
         p.approveUrl = approveLink(result);
       }
-      steps.push({ tool: name, by, args, status: "ok", resultId: id });
+      record({ tool: name, by, args, status: "ok", resultId: id });
       return { ok: true, message: JSON.stringify(result), result };
     } catch (err) {
       const message = err instanceof Error ? err.message : "PayPal call failed";
-      steps.push({ tool: name, by, args, status: "error", message });
+      record({ tool: name, by, args, status: "error", message });
       return { ok: false, message: `ERROR from PayPal: ${message}` };
     }
   };
@@ -369,6 +382,7 @@ export async function provision(
     let nudged = false;
     try {
       for (let turn = 0; turn < maxTurns; turn++) {
+        opts.onEvent?.({ type: "thinking", turn: turn + 1 });
         const res = await llm.complete(messages, { tools });
         if (!res.toolCalls.length) {
           const missing = missingTiers();

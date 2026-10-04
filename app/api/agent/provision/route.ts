@@ -1,13 +1,40 @@
 import { NextResponse } from "next/server";
-import { provision } from "@/lib/paypal/agent";
-import { CatalogProposalSchema } from "@/lib/paypal/catalog";
+import { provision, type ProvisionEvent, type ProvisionResult } from "@/lib/paypal/agent";
+import { CatalogProposalSchema, type CatalogProposal } from "@/lib/paypal/catalog";
 import { createChatClient } from "@/lib/paypal/chat";
-import { readPayPalConfig } from "@/lib/paypal/config";
+import { readPayPalConfig, type PayPalConfig } from "@/lib/paypal/config";
 import { agentExecutor, badRequest, notConfigured, originOf, readJson, tokenSecret } from "@/lib/paypal/server";
 import { buttonSnippet } from "@/lib/paypal/snippet";
 import { signToken, type PreviewPayload } from "@/lib/paypal/token";
 
 export const maxDuration = 60;
+
+function finalPayload(result: ProvisionResult, proposal: CatalogProposal, cfg: PayPalConfig) {
+  const previewPlans = result.plans
+    .filter((p) => p.paypalPlanId || p.interval === "ONE_TIME")
+    .map((p) => ({
+      tierId: p.tierId,
+      name: p.name,
+      description: p.description,
+      amount: p.amount,
+      currency: p.currency,
+      interval: p.interval,
+      paypalPlanId: p.paypalPlanId,
+    }));
+  const payload: PreviewPayload = {
+    kind: "preview",
+    site: proposal.site,
+    productName: proposal.product.name,
+    simulated: result.simulated,
+    plans: previewPlans,
+  };
+  return {
+    status: "ok",
+    result,
+    previewToken: signToken(payload, tokenSecret(cfg)),
+    snippet: buttonSnippet({ clientId: cfg.configured ? cfg.clientId : null, plans: previewPlans }),
+  };
+}
 
 export async function POST(request: Request) {
   const body = await readJson(request);
@@ -22,33 +49,32 @@ export async function POST(request: Request) {
   if (!executor) return notConfigured(cfg);
 
   const origin = originOf(request);
-  const result = await provision(parsed.data, executor, createChatClient(), {
-    urls: { returnUrl: `${origin}/preview/done`, cancelUrl: `${origin}/preview/done?cancelled=1` },
+  const urls = { returnUrl: `${origin}/preview/done`, cancelUrl: `${origin}/preview/done?cancelled=1` };
+
+  if (body?.stream !== true) {
+    const result = await provision(parsed.data, executor, createChatClient(), { urls });
+    return NextResponse.json(finalPayload(result, parsed.data, cfg));
+  }
+
+  // NDJSON: one event per line as the agent works, then the final payload.
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (obj: unknown) => controller.enqueue(encoder.encode(`${JSON.stringify(obj)}\n`));
+      try {
+        const result = await provision(parsed.data, executor, createChatClient(), {
+          urls,
+          onEvent: (event: ProvisionEvent) => send(event),
+        });
+        send({ type: "done", ...finalPayload(result, parsed.data, cfg) });
+      } catch (err) {
+        send({ type: "error", error: err instanceof Error ? err.message : "Provisioning failed." });
+      } finally {
+        controller.close();
+      }
+    },
   });
-
-  const previewPlans = result.plans
-    .filter((p) => p.paypalPlanId || p.interval === "ONE_TIME")
-    .map((p) => ({
-      tierId: p.tierId,
-      name: p.name,
-      description: p.description,
-      amount: p.amount,
-      currency: p.currency,
-      interval: p.interval,
-      paypalPlanId: p.paypalPlanId,
-    }));
-  const payload: PreviewPayload = {
-    kind: "preview",
-    site: parsed.data.site,
-    productName: parsed.data.product.name,
-    simulated: result.simulated,
-    plans: previewPlans,
-  };
-
-  return NextResponse.json({
-    status: "ok",
-    result,
-    previewToken: signToken(payload, tokenSecret(cfg)),
-    snippet: buttonSnippet({ clientId: cfg.configured ? cfg.clientId : null, plans: previewPlans }),
+  return new Response(stream, {
+    headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store" },
   });
 }
