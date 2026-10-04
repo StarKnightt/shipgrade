@@ -137,12 +137,14 @@ describe("provision", () => {
         toolCall("create_subscription_plan", createPlanArgs(approved.plans[0], PRODUCT_CREATED.id), "s"),
         toolCall("create_subscription_plan", createPlanArgs(approved.plans[1], PRODUCT_CREATED.id), "p"),
       ],
-      "Created Acme Notes with Starter and Pro.",
+      "never requested",
     ]);
     const res = await provision(approved, executor, llm);
 
     expect(res.mode).toBe("agent");
-    expect(res.summary).toBe("Created Acme Notes with Starter and Pro.");
+    // Stops as soon as everything exists instead of spending a turn on a summary.
+    expect(seen).toHaveLength(3);
+    expect(res.summary).toBe("Created Acme Notes in PayPal with 2 plans.");
     expect(res.complete).toBe(true);
     expect(res.steps.map((s) => s.status)).toEqual(["ok", "rejected", "ok", "ok"]);
     expect(res.steps.every((s) => s.by === "agent")).toBe(true);
@@ -161,6 +163,23 @@ describe("provision", () => {
       "create_subscription_plan",
       "create_subscription_plan",
     ]);
+  });
+
+  it("nudges once when the agent stops with plans still missing", async () => {
+    const approved = proposal();
+    const { executor } = mockExecutor();
+    const { llm, seen } = scriptedLlm([
+      [toolCall("create_product", { name: "Acme Notes", type: "SERVICE" })],
+      "All done!",
+      [
+        toolCall("create_subscription_plan", createPlanArgs(approved.plans[0], PRODUCT_CREATED.id), "s"),
+        toolCall("create_subscription_plan", createPlanArgs(approved.plans[1], PRODUCT_CREATED.id), "p"),
+      ],
+    ]);
+    const res = await provision(approved, executor, llm);
+    const nudge = seen[2].at(-1);
+    expect(nudge && "content" in nudge && nudge.content).toMatch(/Still missing: starter, pro/);
+    expect(res.steps.every((s) => s.by === "agent")).toBe(true);
   });
 
   it("creates orders for one-time plans and keeps the approve link", async () => {

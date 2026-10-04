@@ -38,7 +38,11 @@ export function createChatClient(
   const { apiKey, baseUrl, agentModel: model } = llm;
   // gpt-oss spends hidden reasoning tokens; on Groq's per-minute token budget
   // that's the difference between finishing the tool loop and a 429.
-  const extra = /gpt-oss/.test(model) ? { reasoning_effort: "low", max_completion_tokens: 2048 } : {};
+  const extra = /gpt-oss/.test(model)
+    ? { reasoning_effort: "low", max_completion_tokens: 1200 }
+    : /qwen3/.test(model)
+      ? { reasoning_effort: "none", max_completion_tokens: 1200 }
+      : {};
   return {
     model,
     async complete(messages, opts = {}) {
@@ -47,7 +51,7 @@ export function createChatClient(
         temperature: opts.temperature ?? 0.2,
         ...extra,
         messages,
-        ...(opts.tools?.length ? { tools: opts.tools, tool_choice: "auto" } : {}),
+        ...(opts.tools?.length ? { tools: opts.tools, tool_choice: "auto", parallel_tool_calls: true } : {}),
         ...(opts.json ? { response_format: { type: "json_object" } } : {}),
       });
       for (let attempt = 0; ; attempt++) {

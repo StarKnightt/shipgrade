@@ -19,7 +19,7 @@ const GROQ_URL = "https://api.groq.com/openai/v1";
 const DEFAULTS = {
   openai: { model: "gpt-4o-mini", agentModel: "gpt-4o-mini" },
   // Separate models give the verdict and the agent separate Groq rate-limit buckets.
-  groq: { model: "openai/gpt-oss-120b", agentModel: "openai/gpt-oss-20b" },
+  groq: { model: "openai/gpt-oss-120b", agentModel: "qwen/qwen3.8-27b" },
 } as const;
 
 export function resolveLlm(env: Env = process.env): LlmConfig | null {

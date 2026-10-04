@@ -241,7 +241,7 @@ const PROVISION_PROMPT = `You are Shipgrade's PayPal provisioning agent, working
 1. create_product once, with the exact approved product name, type, and description.
 2. create_subscription_plan for every MONTH or YEAR plan, using the product id returned in step 1, one REGULAR billing cycle with interval_count 1 and total_cycles 0, the exact amount as a string, currency USD, and payment_preferences {"auto_bill_outstanding": true, "payment_failure_threshold": 3}. If trialDays > 0, add a TRIAL cycle first (interval_unit DAY, interval_count = trialDays, total_cycles 1, price "0"), and the REGULAR cycle gets sequence 2.
 3. create_order for every ONE_TIME plan: currencyCode USD, one item with quantity 1, itemCost = itemTotal = amount, taxPercent 0.
-Make independent calls in the same turn (for example, all plans at once after the product exists). Do not create anything else. If a tool call is rejected, read the reason and fix the call. When everything is created, reply with a one-sentence summary and no tool calls.`;
+Work in two turns: first call create_product alone, then make every plan and order call together in the next turn. Do not create anything else. If a tool call is rejected, read the reason and fix the call. When everything is created, reply with a one-sentence summary and no tool calls.`;
 
 function idOf(res: Record<string, unknown>): string | null {
   return typeof res.id === "string" ? res.id : null;
@@ -329,6 +329,12 @@ export async function provision(
       {
         role: "user",
         content: JSON.stringify({
+          callsToMake: [
+            "create_product",
+            ...approved.plans.map(
+              (p) => `${p.interval === "ONE_TIME" ? "create_order" : "create_subscription_plan"} for ${p.tierId}`,
+            ),
+          ],
           approvedCatalog: {
             product: approved.product,
             plans: approved.plans.map(({ tierId, name, description, amount, currency, interval, trialDays }) => ({
@@ -350,11 +356,28 @@ export async function provision(
       ...(approved.plans.some((p) => p.interval === "ONE_TIME") ? ["create_order"] : []),
     ];
     const tools = compactTools(executor.tools(), needed);
-    const maxTurns = opts.maxTurns ?? 6;
+    const maxTurns = opts.maxTurns ?? 4;
+    const missingTiers = () => [
+      ...(state.productId ? [] : ["product"]),
+      ...approved.plans
+        .filter((p) =>
+          p.interval === "ONE_TIME" ? !state.createdOrderTiers.has(p.tierId) : !state.createdPlanTiers.has(p.tierId),
+        )
+        .map((p) => p.tierId),
+    ];
+    const allCreated = () => missingTiers().length === 0;
+    let nudged = false;
     try {
       for (let turn = 0; turn < maxTurns; turn++) {
         const res = await llm.complete(messages, { tools });
         if (!res.toolCalls.length) {
+          const missing = missingTiers();
+          if (missing.length && !nudged && turn < maxTurns - 1) {
+            nudged = true;
+            messages.push({ role: "assistant", content: res.content ?? "" });
+            messages.push({ role: "user", content: `Not done yet. Still missing: ${missing.join(", ")}. Create them now.` });
+            continue;
+          }
           agentSummary = res.content?.trim() || null;
           break;
         }
@@ -374,6 +397,8 @@ export async function provision(
             content: out.result ? JSON.stringify(briefResult(out.result)) : out.message.slice(0, 1500),
           });
         }
+        // A closing "summary" turn would re-send the whole context for one sentence.
+        if (allCreated()) break;
       }
     } catch (err) {
       // LLM unavailable mid-run; the deterministic pass below finishes the job.

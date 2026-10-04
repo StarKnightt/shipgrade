@@ -32,9 +32,17 @@ function stripNestedDescriptions(node: unknown): unknown {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(node)) {
     if (k === "description" && typeof v === "string") continue;
+    if (k === "additionalProperties" || k === "$schema") continue;
     out[k] = stripNestedDescriptions(v);
   }
   return out;
+}
+
+function firstSentence(text: string | undefined): string | undefined {
+  if (!text) return text;
+  const trimmed = text.trim();
+  const end = trimmed.search(/\.(\s|$)/);
+  return (end > 0 ? trimmed.slice(0, end + 1) : trimmed).slice(0, 160);
 }
 
 /**
@@ -50,7 +58,7 @@ export function compactTools(tools: ToolDefinition[], names: readonly string[]):
       type: "function",
       function: {
         name: t.function.name,
-        description: t.function.description?.slice(0, 400),
+        description: firstSentence(t.function.description),
         parameters: stripNestedDescriptions(t.function.parameters) as Record<string, unknown> | undefined,
       },
     }));
