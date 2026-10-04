@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { analyzeUrl } from "@/lib/analyze";
-import { enhanceWithLlm } from "@/lib/llm";
+import { enhanceWithLlm, explainCheckoutWithLlm } from "@/lib/llm";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -25,11 +25,22 @@ export async function POST(request: Request) {
   try {
     const result = await analyzeUrl(url);
 
-    const enhancement = await enhanceWithLlm(result);
+    const [enhancement, checkoutExplanation] = await Promise.all([
+      enhanceWithLlm(result),
+      explainCheckoutWithLlm(result),
+    ]);
     if (enhancement) {
       result.verdict = enhancement.verdict;
       result.roast = enhancement.roast;
       result.meta.usedLLM = true;
+    }
+    if (checkoutExplanation) {
+      const dim = result.dimensions.find((d) => d.key === "monetization");
+      if (dim) {
+        dim.explanation = checkoutExplanation;
+        dim.explanationByAI = true;
+        result.meta.usedLLM = true;
+      }
     }
 
     return NextResponse.json(result);

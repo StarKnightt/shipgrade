@@ -7,6 +7,7 @@ import type {
   DimensionResult,
   Finding,
 } from "@/lib/analyze";
+import { formatTierPrice, type MonetizationSignals } from "@/lib/monetization";
 import { track } from "@/lib/analytics";
 
 const EXAMPLES = ["stripe.com", "linear.app", "notion.so", "figma.com"];
@@ -18,6 +19,7 @@ const GRADED_DIMENSIONS = [
   "Call to Action",
   "Trust",
   "Craft",
+  "Checkout",
 ];
 
 const LOADING_STEPS = [
@@ -26,6 +28,7 @@ const LOADING_STEPS = [
   "Checking who it's for",
   "Hunting for proof",
   "Weighing your call-to-action",
+  "Finding your pricing",
   "Tallying the grade",
 ];
 
@@ -208,7 +211,7 @@ export default function Shipgrade() {
         <section className="animate-fade-up text-center">
           <span className="inline-flex -rotate-1 items-center gap-2 rounded-full border border-accent/45 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            World Product Day · Everyone Ships Now
+            New · Monetization & Checkout grade
           </span>
 
           <h1 className="mx-auto mt-6 max-w-4xl font-serif text-[2.5rem] font-semibold leading-[1.04] tracking-tight sm:text-6xl lg:text-[4.25rem]">
@@ -365,12 +368,15 @@ function Scorecard({
   onReset,
   onShare,
   copied,
+  extra,
 }: {
   result: AnalysisResult;
   onReset: () => void;
   onShare: () => void;
   copied: boolean;
+  extra?: React.ReactNode;
 }) {
+  const checkoutDim = result.dimensions.find((d) => d.key === "monetization");
   return (
     <section className="animate-fade-up">
       <div className="overflow-hidden rounded-2xl border border-(--border-strong) bg-surface shadow-sm">
@@ -415,10 +421,18 @@ function Scorecard({
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-2">
-        {result.dimensions.map((dim, idx) => (
-          <DimensionCard key={dim.key} dim={dim} delay={idx * 70} />
-        ))}
+        {result.dimensions
+          .filter((dim) => dim.key !== "monetization")
+          .map((dim, idx) => (
+            <DimensionCard key={dim.key} dim={dim} delay={idx * 70} />
+          ))}
       </div>
+
+      {checkoutDim && (
+        <CheckoutCard dim={checkoutDim} checkout={result.checkout} />
+      )}
+
+      {extra}
 
       <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <button
@@ -497,6 +511,161 @@ function DimensionCard({ dim, delay }: { dim: DimensionResult; delay: number }) 
   );
 }
 
+function CheckoutCard({
+  dim,
+  checkout,
+}: {
+  dim: DimensionResult;
+  checkout: MonetizationSignals;
+}) {
+  const color = scoreColor(dim.score);
+  const count = useCountUp(dim.score, 850, 420);
+  const facts: [string, string][] = [
+    ["Billing", BILLING_LABEL[checkout.billingModel]],
+    [
+      "Currency",
+      checkout.currencies.length
+        ? `${checkout.currencies.join(", ")}${checkout.hasCurrencySwitcher ? " · switcher" : ""}`
+        : "None shown",
+    ],
+    ["Pay Later", checkout.payLater ? "Shown" : "Not shown"],
+    [
+      "Sign-up wall",
+      checkout.forcedSignup ? "Before paying" : checkout.guestCheckout ? "Guest checkout" : "None detected",
+    ],
+  ];
+
+  return (
+    <div className="animate-fade-up mt-4 overflow-hidden rounded-2xl border border-(--border-strong) bg-surface shadow-sm">
+      <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[1.1fr_1fr]">
+        <div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface-2"
+                style={{ color }}
+              >
+                <DimensionIcon dimension="monetization" />
+              </span>
+              <h3 className="text-base font-semibold tracking-tight">{dim.label}</h3>
+              <span className="rounded-full border border-accent/50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-accent">
+                New
+              </span>
+            </div>
+            <span className="flex items-baseline gap-0.5">
+              <span className="font-mono text-2xl font-bold" style={{ color }}>
+                {count}
+              </span>
+              <span className="font-mono text-[11px] text-muted">/100</span>
+            </span>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-muted">{dim.blurb}</p>
+          <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+            <div
+              className="h-full rounded-full transition-[width] duration-500"
+              style={{ width: `${count}%`, background: color }}
+            />
+          </div>
+
+          {dim.explanation && (
+            <p className="text-pretty mt-4 border-l-2 border-accent pl-3.5 font-serif text-[0.95rem] italic leading-7 text-foreground/85">
+              {dim.explanation}
+              <span className="ml-2 align-middle font-mono text-[10px] not-italic uppercase tracking-[0.14em] text-muted">
+                {dim.explanationByAI ? "AI explanation" : "Rule engine"}
+              </span>
+            </p>
+          )}
+
+          <ul className="mt-4 space-y-2.5">
+            {dim.findings.map((f, i) => (
+              <FindingRow key={i} finding={f} />
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-xl border border-(--border) bg-background/60 p-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
+              What we found
+            </span>
+            {checkout.pricingSource === "linked" && checkout.pricingUrl && (
+              <a
+                href={checkout.pricingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-[11px] text-accent hover:opacity-70"
+              >
+                {hostPath(checkout.pricingUrl)} ↗
+              </a>
+            )}
+          </div>
+
+          {checkout.tiers.length > 0 ? (
+            <ul className="mt-3 divide-y divide-(--border)">
+              {checkout.tiers.map((t) => (
+                <li key={t.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <span className="font-medium">{t.name}</span>
+                  <span className="flex items-center gap-2">
+                    {t.ctaText && (
+                      <span className="hidden max-w-[10rem] truncate text-xs text-muted sm:inline">
+                        “{t.ctaText}”
+                      </span>
+                    )}
+                    <span className="font-mono text-sm font-bold">{formatTierPrice(t)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted">
+              {checkout.hasPricingSection
+                ? "A pricing section, but no readable plan names and prices."
+                : "No pricing section or /pricing page found."}
+            </p>
+          )}
+
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {checkout.providers.length ? (
+              checkout.providers.map((p) => (
+                <Chip key={p} accent={p === "PayPal"}>
+                  {p}
+                </Chip>
+              ))
+            ) : (
+              <span className="text-xs text-muted">No payment provider detected</span>
+            )}
+          </div>
+
+          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+            {facts.map(([k, v]) => (
+              <div key={k}>
+                <dt className="font-mono uppercase tracking-[0.12em] text-muted">{k}</dt>
+                <dd className="mt-0.5 text-foreground/85">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const BILLING_LABEL: Record<MonetizationSignals["billingModel"], string> = {
+  subscription: "Subscription",
+  one_time: "One-time",
+  mixed: "Subscription + one-time",
+  unknown: "Unclear",
+};
+
+function hostPath(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.hostname.replace(/^www\./, "")}${u.pathname}`;
+  } catch {
+    return url;
+  }
+}
+
 function FindingRow({ finding }: { finding: Finding }) {
   const isWin = finding.type === "win";
   return (
@@ -568,6 +737,14 @@ function DimensionIcon({ dimension }: { dimension: DimensionKey }) {
         <svg {...common}>
           <path d="M12 20h9" />
           <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
+        </svg>
+      );
+    case "monetization":
+      return (
+        <svg {...common}>
+          <rect x="2" y="5" width="20" height="14" rx="2" />
+          <path d="M2 10h20" />
+          <path d="M6 15h4" />
         </svg>
       );
   }

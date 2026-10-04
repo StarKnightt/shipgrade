@@ -1,6 +1,15 @@
 // Shipgrade analyzer: deterministic, dependency-free product critique.
 // Fetches a page, extracts the signals a product person would read in the
-// first five seconds, and grades it across six dimensions.
+// first five seconds, and grades it across seven dimensions.
+
+import {
+  explainMonetization,
+  extractMonetization,
+  findPricingLink,
+  mergeMonetization,
+  scoreMonetization,
+  type MonetizationSignals,
+} from "./monetization";
 
 export type DimensionKey =
   | "valueProp"
@@ -8,7 +17,8 @@ export type DimensionKey =
   | "differentiation"
   | "cta"
   | "trust"
-  | "craft";
+  | "craft"
+  | "monetization";
 
 export type FindingType = "win" | "fix";
 
@@ -24,6 +34,9 @@ export interface DimensionResult {
   score: number; // 0-100
   summary: string;
   findings: Finding[];
+  /** Plain-language explanation; AI-written when an LLM key is configured. */
+  explanation?: string;
+  explanationByAI?: boolean;
 }
 
 export interface AnalysisResult {
@@ -38,6 +51,7 @@ export interface AnalysisResult {
   verdict: string;
   roast: string | null;
   dimensions: DimensionResult[];
+  checkout: MonetizationSignals;
   meta: {
     wordCount: number;
     headingCount: number;
@@ -70,6 +84,10 @@ const DIMENSION_META: Record<DimensionKey, { label: string; blurb: string }> = {
     label: "Messaging Craft",
     blurb: "Is the copy tight, or a wall of jargon?",
   },
+  monetization: {
+    label: "Monetization & Checkout",
+    blurb: "Can a ready buyer see the price and pay in seconds?",
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -96,9 +114,9 @@ interface FetchedPage {
   finalUrl: string;
 }
 
-export async function fetchPage(url: string): Promise<FetchedPage> {
+export async function fetchPage(url: string, timeoutMs = 12_000): Promise<FetchedPage> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12_000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
       signal: controller.signal,
@@ -198,6 +216,7 @@ interface Extracted {
   wordCount: number;
   imageCount: number;
   hasForm: boolean;
+  rawHtml: string;
 }
 
 export function extract(html: string): Extracted {
@@ -229,6 +248,7 @@ export function extract(html: string): Extracted {
     wordCount,
     imageCount,
     hasForm,
+    rawHtml: html,
   };
 }
 
@@ -679,6 +699,14 @@ function scoreCraft(x: Extracted): DimensionResult {
   return buildDimension("craft", score, findings);
 }
 
+function scoreCheckout(signals: MonetizationSignals): DimensionResult {
+  const { score, findings } = scoreMonetization(signals);
+  const dim = buildDimension("monetization", score, findings);
+  dim.explanation = explainMonetization(signals, dim.score);
+  dim.explanationByAI = false;
+  return dim;
+}
+
 // ---------------------------------------------------------------------------
 // Grade + verdict
 // ---------------------------------------------------------------------------
@@ -717,6 +745,9 @@ const VERDICTS: Record<AnalysisResult["band"], string> = {
 export function scoreExtracted(
   x: Extracted,
   source: { url: string; finalUrl: string },
+  checkout: MonetizationSignals = extractMonetization(x.rawHtml, {
+    pricingUrl: source.finalUrl,
+  }),
 ): AnalysisResult {
   const dimensions = [
     scoreValueProp(x),
@@ -725,6 +756,7 @@ export function scoreExtracted(
     scoreCta(x),
     scoreTrust(x),
     scoreCraft(x),
+    scoreCheckout(checkout),
   ];
 
   const overallScore = clamp(
@@ -744,6 +776,7 @@ export function scoreExtracted(
     verdict: VERDICTS[band],
     roast: null,
     dimensions,
+    checkout,
     meta: {
       wordCount: x.wordCount,
       headingCount: x.h1.length + x.h2.length + x.h3.length,
@@ -756,5 +789,23 @@ export async function analyzeUrl(input: string): Promise<AnalysisResult> {
   const url = normalizeUrl(input);
   const { html, finalUrl } = await fetchPage(url);
   const extracted = extract(html);
-  return scoreExtracted(extracted, { url, finalUrl });
+  const pageSignals = extractMonetization(html, { pricingUrl: finalUrl, source: "page" });
+
+  let linkedSignals: MonetizationSignals | null = null;
+  if (pageSignals.tiers.length < 2) {
+    const pricingUrl = findPricingLink(html, finalUrl);
+    if (pricingUrl) {
+      try {
+        const pricing = await fetchPage(pricingUrl, 8_000);
+        linkedSignals = extractMonetization(pricing.html, {
+          pricingUrl: pricing.finalUrl,
+          source: "linked",
+        });
+      } catch {
+        // pricing page is best-effort; grade the landing page alone
+      }
+    }
+  }
+
+  return scoreExtracted(extracted, { url, finalUrl }, mergeMonetization(pageSignals, linkedSignals));
 }

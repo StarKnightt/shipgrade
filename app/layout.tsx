@@ -22,7 +22,7 @@ const spaceMono = Space_Mono({
 
 const title = "Shipgrade: Grade your product page in 30 seconds";
 const description =
-  "Paste your product or SaaS page and get a ruthless, specific critique across value prop, audience, differentiation, CTA, trust, and craft. Graded in about 30 seconds.";
+  "Paste your product or SaaS page and get a ruthless, specific critique across value prop, audience, differentiation, CTA, trust, craft, and checkout. Graded in about 30 seconds.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://shipgrade.app"),
