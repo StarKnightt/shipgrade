@@ -22,7 +22,13 @@ describe("POST /api/agent/invoice", () => {
     call.mockResolvedValue({ id: "INV2-AAAA", status: "DRAFT" });
     const res = await POST(request());
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ status: "draft", invoice: { id: "INV2-AAAA" } });
+    expect(await res.json()).toMatchObject({ status: "draft", invoiceId: "INV2-AAAA" });
+  });
+
+  it("reads the invoice id from PayPal's self link", async () => {
+    call.mockResolvedValue({ rel: "self", href: "https://api.sandbox.paypal.com/v2/invoicing/invoices/INV2-PBHU-MP54", method: "GET" });
+    const res = await POST(request());
+    expect((await res.json()).invoiceId).toBe("INV2-PBHU-MP54");
   });
 
   it("surfaces a toolkit failure instead of calling it a draft", async () => {

@@ -48,7 +48,11 @@ export async function POST(request: Request) {
         { status: 502 },
       );
     }
-    return NextResponse.json({ status: "draft", simulated: executor.simulated, invoice });
+    // PayPal answers create-invoice with just a self link to the new draft.
+    const href = typeof invoice.href === "string" ? invoice.href : "";
+    const invoiceId =
+      (typeof invoice.id === "string" ? invoice.id : null) ?? href.match(/invoices\/([A-Z0-9-]+)/)?.[1] ?? null;
+    return NextResponse.json({ status: "draft", simulated: executor.simulated, invoiceId, invoice });
   } catch (err) {
     return upstreamError(err);
   }
