@@ -21,7 +21,7 @@ import {
   type ProposedPlan,
 } from "./catalog";
 import type { ChatClient, ChatMessage } from "./chat";
-import { ToolCallError, type ToolExecutor } from "./toolkit";
+import { compactTools, ToolCallError, type ToolExecutor } from "./toolkit";
 
 // ---------------------------------------------------------------------------
 // Propose
@@ -46,7 +46,7 @@ const RefinementSchema = z.object({
 
 const PROPOSE_PROMPT = `You are Shipgrade's checkout agent. A crawler read a founder's pricing section and a rule engine drafted a PayPal catalog (one product, one plan per paid tier).
 
-Refine it for PayPal. You may rename plans and write short buyer-facing descriptions (max 127 chars), suggest a free trial (0-30 days) where the page mentions one, and drop plans that make no sense (include=false). You may NOT change prices, intervals, or currency, and may not add plans.
+Refine it for PayPal. Keep the plan names the site uses (buyers must recognise them at checkout); only rename a plan whose detected name is clearly broken. Write short buyer-facing descriptions (max 127 chars), suggest a free trial (0-30 days) where the page mentions one, and drop plans that make no sense (include=false). You may NOT change prices, intervals, or currency, and may not add plans.
 
 Reply with ONLY JSON:
 {"productName": string, "productDescription": string, "plans": [{"tierId": string, "name": string, "description": string, "trialDays": number, "include": boolean}], "rationale": string}
@@ -80,7 +80,8 @@ export async function propose(
     );
     const refined = RefinementSchema.parse(JSON.parse(res.content ?? "{}"));
     return applyRefinement(base, refined);
-  } catch {
+  } catch (err) {
+    console.warn(`[checkout-agent] proposal refinement fell back to rules: ${err instanceof Error ? err.message : err}`);
     return { ...base, rationale: rulesRationale(base) };
   }
 }
@@ -157,6 +158,13 @@ export function checkToolCall(
     if (args.product_id !== state.productId) {
       return { ok: false, reason: `product_id must be ${state.productId}.` };
     }
+    // Optional in the toolkit's schema, but PayPal rejects plans without it.
+    if (!args.payment_preferences || typeof args.payment_preferences !== "object") {
+      return {
+        ok: false,
+        reason: 'payment_preferences is required: {"auto_bill_outstanding": true, "payment_failure_threshold": 3}.',
+      };
+    }
     const cycles = Array.isArray(args.billing_cycles) ? (args.billing_cycles as Record<string, unknown>[]) : [];
     const regular = cycles.find((c) => c.tenure_type === "REGULAR") as
       | { frequency?: { interval_unit?: string; interval_count?: number }; pricing_scheme?: { fixed_price?: { value?: string; currency_code?: string } } }
@@ -225,16 +233,37 @@ export interface ProvisionResult {
   steps: ProvisionStep[];
   summary: string;
   complete: boolean;
+  /** Why the LLM stopped early, when the rule engine had to finish. */
+  agentError?: string;
 }
 
 const PROVISION_PROMPT = `You are Shipgrade's PayPal provisioning agent, working in the PayPal SANDBOX. The founder approved the catalog below. Use the PayPal tools to create exactly that:
 1. create_product once, with the exact approved product name, type, and description.
-2. create_subscription_plan for every MONTH or YEAR plan, using the product id returned in step 1, one REGULAR billing cycle with interval_count 1 and total_cycles 0, the exact amount as a string, currency USD. If trialDays > 0, add a TRIAL cycle first (interval_unit DAY, interval_count = trialDays, total_cycles 1, price "0"), and the REGULAR cycle gets sequence 2.
+2. create_subscription_plan for every MONTH or YEAR plan, using the product id returned in step 1, one REGULAR billing cycle with interval_count 1 and total_cycles 0, the exact amount as a string, currency USD, and payment_preferences {"auto_bill_outstanding": true, "payment_failure_threshold": 3}. If trialDays > 0, add a TRIAL cycle first (interval_unit DAY, interval_count = trialDays, total_cycles 1, price "0"), and the REGULAR cycle gets sequence 2.
 3. create_order for every ONE_TIME plan: currencyCode USD, one item with quantity 1, itemCost = itemTotal = amount, taxPercent 0.
-Do not create anything else. If a tool call is rejected, read the reason and fix the call. When everything is created, reply with a one-sentence summary and no tool calls.`;
+Make independent calls in the same turn (for example, all plans at once after the product exists). Do not create anything else. If a tool call is rejected, read the reason and fix the call. When everything is created, reply with a one-sentence summary and no tool calls.`;
 
 function idOf(res: Record<string, unknown>): string | null {
   return typeof res.id === "string" ? res.id : null;
+}
+
+function describePayPalError(res: Record<string, unknown>): string {
+  const details = Array.isArray(res.details) ? (res.details as { issue?: string; field?: string; description?: string }[]) : [];
+  const parts = [
+    typeof res.name === "string" ? res.name : null,
+    typeof res.message === "string" ? res.message : null,
+    ...details.slice(0, 3).map((d) => [d.field, d.issue, d.description].filter(Boolean).join(" ")),
+  ].filter(Boolean);
+  return parts.length ? `: ${parts.join("; ").slice(0, 400)}` : `: ${JSON.stringify(res).slice(0, 300)}`;
+}
+
+/** What the agent needs back from a tool call; full PayPal bodies waste tokens. */
+function briefResult(res: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { id: res.id };
+  for (const k of ["status", "name", "product_id"]) if (res[k] !== undefined) out[k] = res[k];
+  const approve = approveLink(res);
+  if (approve) out.approve_url = approve;
+  return out;
 }
 
 function approveLink(res: Record<string, unknown>): string | null {
@@ -268,7 +297,7 @@ export async function provision(
     try {
       const result = await executor.call(name, args);
       const id = idOf(result);
-      if (!id) throw new ToolCallError(name, "PayPal response had no id", result);
+      if (!id) throw new ToolCallError(name, `PayPal response had no id${describePayPalError(result)}`, result);
       if (name === "create_product") state.productId = id;
       if (name === "create_subscription_plan" && verdict.tierId) {
         state.createdPlanTiers.add(verdict.tierId);
@@ -291,15 +320,37 @@ export async function provision(
 
   let mode: ProvisionResult["mode"] = "rules";
   let agentSummary: string | null = null;
+  let agentError: string | null = null;
 
   if (llm) {
     mode = "agent";
     const messages: ChatMessage[] = [
       { role: "system", content: PROVISION_PROMPT },
-      { role: "user", content: JSON.stringify({ approvedCatalog: approved }) },
+      {
+        role: "user",
+        content: JSON.stringify({
+          approvedCatalog: {
+            product: approved.product,
+            plans: approved.plans.map(({ tierId, name, description, amount, currency, interval, trialDays }) => ({
+              tierId,
+              name,
+              description,
+              amount,
+              currency,
+              interval,
+              trialDays,
+            })),
+          },
+        }),
+      },
     ];
-    const tools = executor.tools();
-    const maxTurns = opts.maxTurns ?? 10;
+    const needed = [
+      "create_product",
+      ...(approved.plans.some((p) => p.interval !== "ONE_TIME") ? ["create_subscription_plan"] : []),
+      ...(approved.plans.some((p) => p.interval === "ONE_TIME") ? ["create_order"] : []),
+    ];
+    const tools = compactTools(executor.tools(), needed);
+    const maxTurns = opts.maxTurns ?? 6;
     try {
       for (let turn = 0; turn < maxTurns; turn++) {
         const res = await llm.complete(messages, { tools });
@@ -317,11 +368,17 @@ export async function provision(
             continue;
           }
           const out = await execute(call.function.name, args, "agent");
-          messages.push({ role: "tool", tool_call_id: call.id, content: out.message.slice(0, 4000) });
+          messages.push({
+            role: "tool",
+            tool_call_id: call.id,
+            content: out.result ? JSON.stringify(briefResult(out.result)) : out.message.slice(0, 1500),
+          });
         }
       }
-    } catch {
+    } catch (err) {
       // LLM unavailable mid-run; the deterministic pass below finishes the job.
+      agentError = err instanceof Error ? err.message : "LLM request failed";
+      console.warn(`[checkout-agent] LLM stopped, finishing with rules: ${agentError}`);
     }
   }
 
@@ -358,5 +415,6 @@ export async function provision(
     steps,
     summary,
     complete,
+    ...(agentError ? { agentError } : {}),
   };
 }

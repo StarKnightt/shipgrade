@@ -106,6 +106,14 @@ describe("checkToolCall guard", () => {
     expect(checkToolCall("create_refund", {}, approved, fresh()).ok).toBe(false);
     expect(checkToolCall("create_product", { name: "Evil Corp" }, approved, { ...fresh(), productId: null }).ok).toBe(false);
   });
+
+  it("rejects a plan without payment_preferences, which PayPal requires", () => {
+    const args = { ...createPlanArgs(approved.plans[1], "PROD-1") } as Record<string, unknown>;
+    delete args.payment_preferences;
+    const verdict = checkToolCall("create_subscription_plan", args, approved, fresh());
+    expect(verdict.ok).toBe(false);
+    expect(!verdict.ok && verdict.reason).toMatch(/payment_preferences/);
+  });
 });
 
 describe("provision", () => {

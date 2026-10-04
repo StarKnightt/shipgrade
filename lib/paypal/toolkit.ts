@@ -26,6 +26,36 @@ export const AGENT_TOOL_NAMES = [
 ] as const;
 export type AgentToolName = (typeof AGENT_TOOL_NAMES)[number];
 
+function stripNestedDescriptions(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(stripNestedDescriptions);
+  if (!node || typeof node !== "object") return node;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(node)) {
+    if (k === "description" && typeof v === "string") continue;
+    out[k] = stripNestedDescriptions(v);
+  }
+  return out;
+}
+
+/**
+ * The toolkit's schemas carry long per-field docs (create_invoice alone is
+ * ~11k chars). Keep only the named tools, their top-level description, and
+ * the full parameter structure, so the agent fits small-context and
+ * rate-limited models (Groq free tier is 8k tokens/minute).
+ */
+export function compactTools(tools: ToolDefinition[], names: readonly string[]): ToolDefinition[] {
+  return tools
+    .filter((t) => names.includes(t.function.name))
+    .map((t) => ({
+      type: "function",
+      function: {
+        name: t.function.name,
+        description: t.function.description?.slice(0, 400),
+        parameters: stripNestedDescriptions(t.function.parameters) as Record<string, unknown> | undefined,
+      },
+    }));
+}
+
 /** Toolkit `configuration.actions` enabling only what the agent may do. */
 export const AGENT_ACTIONS = {
   products: { create: true },
