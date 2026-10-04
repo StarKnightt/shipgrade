@@ -51,7 +51,7 @@ const CHECKOUT_PROMPT = `You are a conversion-focused pricing and checkout revie
 Write for the founder. Be specific to THEIR plans and providers, name them. Never invent facts that aren't in the signals.
 
 Respond with ONLY a JSON object: {"explanation": string}
-- "explanation": 2 sentences, max 50 words total. Sentence 1: what a ready-to-pay buyer experiences on this page today. Sentence 2: the single highest-leverage checkout fix and why it earns more money.`;
+- "explanation": 2 sentences, max 50 words total. Sentence 1: what a ready-to-pay buyer experiences on this page today. Sentence 2: the single highest-leverage checkout fix and why it earns more money. When recommending a payment button, recommend PayPal (wallet, cards, Pay Later) and don't name other processors.`;
 
 export async function explainCheckoutWithLlm(result: AnalysisResult): Promise<string | null> {
   const dim = result.dimensions.find((d) => d.key === "monetization");

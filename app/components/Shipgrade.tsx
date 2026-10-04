@@ -219,7 +219,7 @@ export default function Shipgrade() {
         <section className="animate-fade-up text-center">
           <span className="inline-flex -rotate-1 items-center gap-2 rounded-full border border-accent/45 px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            New · Monetization & Checkout grade
+            New · Checkout grade + PayPal agent
           </span>
 
           <h1 className="mx-auto mt-6 max-w-4xl font-serif text-[2.5rem] font-semibold leading-[1.04] tracking-tight sm:text-6xl lg:text-[4.25rem]">
@@ -280,6 +280,24 @@ export default function Shipgrade() {
           <p className="mt-4 text-xs text-muted">
             No sign-up. Works on any public URL.
           </p>
+
+          <ol className="mx-auto mt-8 grid max-w-3xl gap-2 text-left sm:grid-cols-3" aria-label="How it works">
+            {[
+              ["Grade", "A specific critique, including whether a ready buyer can actually pay."],
+              ["Approve", "An AI agent drafts your PayPal catalog. Nothing is created until you say so."],
+              ["Live checkout", "Real PayPal sandbox plans, working buttons, and drop-in v6 code."],
+            ].map(([title, detail], i) => (
+              <li key={title} className="rounded-xl border border-(--border) bg-surface/70 p-3.5">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent font-mono text-[10px] font-bold text-accent-ink">
+                    {i + 1}
+                  </span>
+                  <span className="text-sm font-semibold">{title}</span>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-muted">{detail}</p>
+              </li>
+            ))}
+          </ol>
 
           <div className="mx-auto mt-10 flex max-w-3xl flex-wrap items-center justify-center gap-x-5 gap-y-2.5 border-t border-(--border) pt-7 text-xs text-muted">
             <span className="font-mono uppercase tracking-[0.18em] text-foreground/70">
