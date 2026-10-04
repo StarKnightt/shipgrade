@@ -89,5 +89,17 @@ describe("routeWebhookEvent", () => {
       invoiceId: "INV2-1",
     });
     expect(routeWebhookEvent({ id: "3", event_type: "CHECKOUT.ORDER.APPROVED" }).kind).toBe("ignored");
+    expect(
+      routeWebhookEvent({
+        id: "4",
+        event_type: "BILLING.SUBSCRIPTION.ACTIVATED",
+        resource: { id: "I-2", plan_id: "P-2", custom_id: "preview:linear.app:basic" },
+      }),
+    ).toEqual({
+      kind: "preview_payment",
+      eventType: "BILLING.SUBSCRIPTION.ACTIVATED",
+      resourceId: "I-2",
+      customId: "preview:linear.app:basic",
+    });
   });
 });

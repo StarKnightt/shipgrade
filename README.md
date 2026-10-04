@@ -11,6 +11,8 @@ Originally built for **World Product Day 2026: Everyone Ships Now**. Extended
 for the **PayPal AI Hackathon** (October 2026) with a Monetization & Checkout
 grade and a PayPal checkout agent. See [What's new](#whats-new-for-the-paypal-ai-hackathon).
 
+**Hackathon demo (PayPal sandbox):** https://shipgrade-checkout.vercel.app
+
 ## What it grades
 
 Shipgrade scores seven dimensions that decide whether a stranger "gets it"
