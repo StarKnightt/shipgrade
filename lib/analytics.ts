@@ -34,7 +34,6 @@ export function track(event: EventName, props: Props = {}): void {
     // never let analytics break the app
   }
   if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
     console.debug("[shipgrade:event]", event, payload);
   }
 }

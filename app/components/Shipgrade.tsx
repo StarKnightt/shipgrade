@@ -67,11 +67,9 @@ function prefersReducedMotion(): boolean {
 
 function useCountUp(target: number, duration = 900, delay = 0): number {
   const [value, setValue] = useState(0);
+  const reduced = prefersReducedMotion();
   useEffect(() => {
-    if (prefersReducedMotion()) {
-      setValue(target);
-      return;
-    }
+    if (reduced) return;
     let raf = 0;
     let start = 0;
     const tick = (t: number) => {
@@ -88,8 +86,8 @@ function useCountUp(target: number, duration = 900, delay = 0): number {
       clearTimeout(timer);
       cancelAnimationFrame(raf);
     };
-  }, [target, duration, delay]);
-  return value;
+  }, [target, duration, delay, reduced]);
+  return reduced ? target : value;
 }
 
 export default function Shipgrade() {
@@ -162,7 +160,7 @@ export default function Shipgrade() {
     run(url);
   }
 
-  function useExample(example: string) {
+  function runExample(example: string) {
     setUrl(example);
     track("example_clicked", { url: example });
     run(example, "example");
@@ -261,7 +259,7 @@ export default function Shipgrade() {
             {EXAMPLES.map((ex) => (
               <button
                 key={ex}
-                onClick={() => useExample(ex)}
+                onClick={() => runExample(ex)}
                 className="rounded-full border border-(--border-strong) bg-surface px-3 py-1 font-mono text-xs text-foreground transition-colors hover:border-accent hover:text-accent"
               >
                 {ex}

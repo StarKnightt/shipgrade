@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Shipgrade from "./components/Shipgrade";
 
 export default function Home() {
@@ -5,7 +6,7 @@ export default function Home() {
     <>
       <header className="sticky top-0 z-10 border-b border-(--border) bg-background/80 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-3.5">
-          <a href="/" className="group flex items-center gap-2.5">
+          <Link href="/" className="group flex items-center gap-2.5">
             <span className="grid h-8 w-8 -rotate-3 place-items-center rounded-full border-2 border-accent transition-transform group-hover:rotate-0">
               <span className="font-serif text-base font-semibold leading-none text-accent">
                 S
@@ -14,7 +15,7 @@ export default function Home() {
             <span className="font-serif text-lg font-semibold tracking-tight">
               Shipgrade
             </span>
-          </a>
+          </Link>
           <span className="hidden font-mono text-[11px] uppercase tracking-[0.18em] text-muted sm:block">
             Product report cards
           </span>
