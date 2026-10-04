@@ -451,6 +451,11 @@ export function formatTierPrice(t: PricingTier): string {
   return `${sym}${value}${suffix}`;
 }
 
+function tierLabel(t: PricingTier): string {
+  const price = formatTierPrice(t);
+  return t.name.toLowerCase() === price.toLowerCase() ? t.name : `${t.name} ${price}`;
+}
+
 interface Weighted extends Finding {
   weight: number;
 }
@@ -476,7 +481,7 @@ export function scoreMonetization(s: MonetizationSignals): { score: number; find
         weight: 4,
         text: `${s.tiers.length} clear plans (${s.tiers
           .slice(0, 3)
-          .map((t) => `${t.name} ${formatTierPrice(t)}`)
+          .map((t) => tierLabel(t))
           .join(", ")}). Few, named tiers make the choice easy.`,
       });
     } else if (s.tiers.length > 4) {
@@ -617,7 +622,7 @@ export function explainMonetization(s: MonetizationSignals, score: number): stri
     return "We couldn't find a price anywhere a buyer would look, so the page asks for trust before it shows the cost. A visible plan with a PayPal button beside it is the fastest fix.";
   }
   const plans = s.tiers.length
-    ? `${s.tiers.length} plan${s.tiers.length > 1 ? "s" : ""} (${s.tiers.map((t) => `${t.name} ${formatTierPrice(t)}`).join(", ")})`
+    ? `${s.tiers.length} plan${s.tiers.length > 1 ? "s" : ""} (${s.tiers.map((t) => tierLabel(t)).join(", ")})`
     : "a pricing section";
   const pay = s.providers.length ? `checkout via ${s.providers.slice(0, 3).join(", ")}` : "no visible way to pay";
   const risk = s.forcedSignup

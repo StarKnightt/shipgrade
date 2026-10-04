@@ -233,9 +233,9 @@ export default function CheckoutAgent({
                 disabled={!canProvision || excluded.size === proposal.plans.length}
                 className="rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-ink shadow-sm transition-transform enabled:hover:scale-[1.02] enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-45"
               >
-                {status?.configured && !status.dryRun
-                  ? "Approve & create in PayPal sandbox"
-                  : "Approve & simulate (dry run)"}
+                {status?.dryRun
+                  ? "Approve & simulate (dry run)"
+                  : "Approve & create in PayPal sandbox"}
               </button>
               <button
                 onClick={() => setPhase("idle")}
