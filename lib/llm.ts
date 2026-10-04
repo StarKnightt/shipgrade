@@ -3,6 +3,7 @@
 // human verdict and a one-line roast on top. Any failure degrades silently.
 
 import type { AnalysisResult } from "./analyze";
+import { resolveLlm } from "./llm-config";
 
 export interface LlmEnhancement {
   verdict: string;
@@ -20,7 +21,7 @@ interface LlmInput {
 }
 
 export function isLlmEnabled(): boolean {
-  return Boolean(process.env.OPENAI_API_KEY);
+  return resolveLlm() !== null;
 }
 
 function hostFromUrl(url: string): string {
@@ -90,10 +91,9 @@ async function chatJson(
   input: unknown,
   temperature: number,
 ): Promise<Record<string, unknown> | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
-  const baseUrl = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1";
-  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  const llm = resolveLlm();
+  if (!llm) return null;
+  const { apiKey, baseUrl, model } = llm;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12_000);
   try {
@@ -128,11 +128,9 @@ async function chatJson(
 export async function enhanceWithLlm(
   result: AnalysisResult,
 ): Promise<LlmEnhancement | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
-
-  const baseUrl = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1";
-  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  const llm = resolveLlm();
+  if (!llm) return null;
+  const { apiKey, baseUrl, model } = llm;
 
   const weakest = [...result.dimensions].sort((a, b) => a.score - b.score)[0];
   const issue =
