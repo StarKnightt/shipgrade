@@ -22,9 +22,8 @@ export interface PayPalInstance {
     paymentFlow?: "ONE_TIME_PAYMENT" | "RECURRING_PAYMENT";
   }): Promise<{ isEligible(method: string): boolean }>;
   createPayPalOneTimePaymentSession(callbacks: SessionCallbacks): PayPalSession;
-  // The reference docs and the official sample disagree on this name.
+  // Some docs say createPayPalSubscriptionSession; the live sandbox SDK only has this name.
   createPayPalSubscriptionPaymentSession?(callbacks: SessionCallbacks): PayPalSession;
-  createPayPalSubscriptionSession?(callbacks: SessionCallbacks): PayPalSession;
 }
 
 interface PayPalNamespace {
@@ -82,8 +81,8 @@ export function getPayPalInstance(
 }
 
 export function createSubscriptionSession(instance: PayPalInstance, callbacks: SessionCallbacks): PayPalSession {
-  const factory =
-    instance.createPayPalSubscriptionPaymentSession ?? instance.createPayPalSubscriptionSession;
-  if (!factory) throw new Error("This PayPal SDK build has no subscription session.");
-  return factory.call(instance, callbacks);
+  if (!instance.createPayPalSubscriptionPaymentSession) {
+    throw new Error("This PayPal SDK build has no subscription session.");
+  }
+  return instance.createPayPalSubscriptionPaymentSession(callbacks);
 }

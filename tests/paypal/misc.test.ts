@@ -38,6 +38,8 @@ describe("buttonSnippet", () => {
     expect(code).toContain('"pro": "P-123"');
     expect(code).toContain("createPayPalOneTimePaymentSession");
     expect(code).toContain('paymentFlow: "RECURRING_PAYMENT"');
+    expect(code).toContain("sdk.createPayPalSubscriptionPaymentSession(");
+    expect(code).not.toContain("createPayPalSubscriptionSession");
   });
 
   it("escapes plan names", () => {

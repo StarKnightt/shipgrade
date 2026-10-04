@@ -44,9 +44,8 @@ export function buttonSnippet(input: {
   // Subscriptions (v6 "paypal-subscriptions" component)
   const subEligible = await sdk.findEligibleMethods({ paymentFlow: "RECURRING_PAYMENT", currencyCode: "USD" });
   if (subEligible.isEligible("paypal")) {
-    const createSubSession = sdk.createPayPalSubscriptionPaymentSession ?? sdk.createPayPalSubscriptionSession;
     for (const [tier, planId] of Object.entries(PLAN_IDS)) {
-      const session = createSubSession.call(sdk, {
+      const session = sdk.createPayPalSubscriptionPaymentSession({
         onApprove: async ({ subscriptionId }) => {
           // Verify server-side (GET /v1/billing/subscriptions/{id}) before granting access.
           await fetch(${js(subscriptionEndpoint)} + "/" + subscriptionId + "/verify", { method: "POST" });
