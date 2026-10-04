@@ -289,7 +289,7 @@ function FoundPricing({ result, title }: { result: AnalysisResult; title: string
                   ) : null}
                 </div>
                 <div className="mt-2 rounded-md border border-(--border-strong) px-2 py-1 text-center text-xs text-muted">
-                  {t.ctaText ?? "No button"}
+                  {t.ctaText ?? (t.isCustom ? "Contact sales" : "No button")}
                 </div>
               </li>
             ))}
