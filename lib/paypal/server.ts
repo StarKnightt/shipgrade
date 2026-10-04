@@ -6,11 +6,15 @@ import { readPayPalConfig, type PayPalConfig, type PayPalReady } from "./config"
 import { PayPalRest } from "./rest";
 import { createDryRunExecutor, createToolkitExecutor, type ToolExecutor } from "./toolkit";
 
-const devSecret = randomBytes(32).toString("hex");
+// Route handlers and pages are separate bundles, so share via globalThis.
+const g = globalThis as { __shipgradeDevSecret?: string };
+g.__shipgradeDevSecret ??= randomBytes(32).toString("hex");
 
-/** Secret for signed preview/unlock tokens. Ephemeral when PayPal isn't set up. */
+/** Secret for signed preview/unlock tokens. Per-process when PayPal isn't set up. */
 export function tokenSecret(cfg: PayPalConfig): string {
-  return cfg.configured ? cfg.signingSecret : process.env.SHIPGRADE_SIGNING_SECRET?.trim() || devSecret;
+  return cfg.configured
+    ? cfg.signingSecret
+    : process.env.SHIPGRADE_SIGNING_SECRET?.trim() || g.__shipgradeDevSecret!;
 }
 
 /** Real toolkit executor when configured; simulated one when PAYPAL_DRY_RUN is on. */

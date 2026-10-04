@@ -9,6 +9,8 @@ import type {
 } from "@/lib/analyze";
 import { formatTierPrice, type MonetizationSignals } from "@/lib/monetization";
 import { track } from "@/lib/analytics";
+import CheckoutAgent, { type PayPalStatus } from "./CheckoutAgent";
+import ShipgradeUpgrade from "./ShipgradeUpgrade";
 
 const EXAMPLES = ["stripe.com", "linear.app", "notion.so", "figma.com"];
 
@@ -99,8 +101,16 @@ export default function Shipgrade() {
   const [copied, setCopied] = useState(false);
   const stepTimer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [paypal, setPaypal] = useState<PayPalStatus | null>(null);
 
   useEffect(() => () => clearInterval(stepTimer.current), []);
+
+  useEffect(() => {
+    fetch("/api/paypal/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setPaypal)
+      .catch(() => setPaypal(null));
+  }, []);
 
   async function run(target: string, source: "form" | "example" = "form") {
     const trimmed = target.trim();
@@ -302,6 +312,12 @@ export default function Shipgrade() {
           onReset={reset}
           onShare={share}
           copied={copied}
+          extra={
+            <>
+              <CheckoutAgent key={result.fetchedAt} result={result} status={paypal} />
+              <ShipgradeUpgrade url={result.finalUrl} status={paypal} />
+            </>
+          }
         />
       )}
     </div>
