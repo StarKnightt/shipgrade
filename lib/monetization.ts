@@ -193,7 +193,10 @@ const CTA_RE =
   /^(?:start|get|try|go|choose|select|upgrade to)\b|\b(buy|purchase|subscribe|get started|upgrade|sign up|signup|create account|contact (?:sales|us)|talk to sales|book a demo|checkout|pay now|add to cart)\b/i;
 
 const NOT_TIER_NAMES =
-  /^(pricing|plans?|faq|frequently asked questions|features|compare|testimonials?|questions?|what's included|everything in)/i;
+  /^(all plans|pricing|plans?|faq|frequently asked questions|features|compare|testimonials?|questions?|what's included|everything in)/i;
+
+// Marketing headings ("Measure your conversions"), not plan names.
+const SENTENCE_LIKE = /\b(your|you|our|we|how|why|what)\b|[?!.:]$/i;
 
 export function extractTiers(regionHtml: string): PricingTier[] {
   const headingRe = /<(h[2-4])\b[^>]*>([\s\S]*?)<\/\1>/gi;
@@ -206,7 +209,15 @@ export function extractTiers(regionHtml: string): PricingTier[] {
   const tiers: PricingTier[] = [];
   for (let i = 0; i < marks.length; i++) {
     const { name, end } = marks[i];
-    if (!name || name.split(/\s+/).length > 5 || NOT_TIER_NAMES.test(name)) continue;
+    if (
+      !name ||
+      name.split(/\s+/).length > 4 ||
+      NOT_TIER_NAMES.test(name) ||
+      SENTENCE_LIKE.test(name) ||
+      (CTA_RE.test(name) && !parsePrice(name))
+    ) {
+      continue;
+    }
     const segment = regionHtml.slice(end, marks[i + 1]?.index ?? end + 6_000);
     const text = toText(segment);
     if (!text) continue;
@@ -445,7 +456,7 @@ interface Weighted extends Finding {
 }
 
 export function scoreMonetization(s: MonetizationSignals): { score: number; findings: Finding[] } {
-  let score = 42;
+  let score = 28;
   const f: Weighted[] = [];
   const paidTiers = s.tiers.filter((t) => (t.amount ?? 0) > 0);
 
@@ -505,6 +516,7 @@ export function scoreMonetization(s: MonetizationSignals): { score: number; find
       }`,
     });
     if (!s.providers.includes("PayPal") && !s.providers.includes("Apple Pay") && !s.providers.includes("Google Pay")) {
+      score -= 4;
       f.push({
         type: "fix",
         weight: 6,

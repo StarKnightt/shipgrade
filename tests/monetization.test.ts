@@ -5,6 +5,7 @@ import {
   explainMonetization,
   extractMonetization,
   findPricingLink,
+  extractTiers,
   formatTierPrice,
   mergeMonetization,
   parsePrice,
@@ -79,6 +80,18 @@ describe("extractMonetization", () => {
     expect(s.currencies).toContain("EUR");
     expect(s.hasCurrencySwitcher).toBe(true);
     expect(s.tiers.every((t) => t.currency === "EUR")).toBe(true);
+  });
+});
+
+describe("extractTiers", () => {
+  it("ignores marketing headings and CTAs that sit next to a price", () => {
+    const html = `
+      <h3>Measure your conversions</h3><p>Only $10/mo</p>
+      <h3>Sign up for an account</h3><p>From $15/month</p>
+      <h3>All plans include:</h3><p>$10/mo</p>
+      <h3>Pro</h3><p>$24/month</p>
+      <h3>Business</h3><p>$74/month</p>`;
+    expect(extractTiers(html).map((t) => t.name)).toEqual(["Pro", "Business"]);
   });
 });
 
