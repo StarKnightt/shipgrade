@@ -1,22 +1,12 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import {
-  ArrowRight,
-  ArrowSquareOut,
-  Check,
-  CheckCircle,
-  CircleNotch,
-  Copy,
-  Receipt,
-  ShieldCheck,
-  WarningCircle,
-  XCircle,
-} from "@phosphor-icons/react";
+import { I, Icon } from "@/app/components/icons";
 import type { AnalysisResult } from "@/lib/analyze";
 import type { ProvisionResult, ProvisionStep } from "@/lib/paypal/agent";
 import type { CatalogProposal, ProposedPlan } from "@/lib/paypal/catalog";
 import type { PublicPayPalStatus } from "@/lib/paypal/config";
+import { tidy } from "@/lib/tidy";
 
 export type PayPalStatus = PublicPayPalStatus & { agentLLM: boolean };
 
@@ -209,15 +199,14 @@ export default function CheckoutAgent({
                 className="press btn-ink group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold sm:w-auto"
               >
                 Draft my PayPal catalog
-                <ArrowRight
-                  aria-hidden
+                <Icon icon={I.arrowRight}
+                 
                   size={15}
-                  weight="bold"
                   className="transition-transform duration-200 group-hover:translate-x-0.5"
                 />
               </button>
               <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
-                <ShieldCheck aria-hidden size={14} weight="bold" className="text-grade-excellent" />
+                <Icon icon={I.shield} size={14} className="text-grade-excellent" />
                 Nothing is created in PayPal until you approve.
               </p>
             </div>
@@ -229,10 +218,10 @@ export default function CheckoutAgent({
         {phase === "error" && (
           <div role="alert" className="rounded-lg border border-grade-poor/35 bg-grade-poor/5 p-4 text-sm sm:p-5">
             <div className="flex items-center gap-2 font-semibold text-grade-poor">
-              <WarningCircle aria-hidden size={18} weight="fill" />
+              <Icon icon={I.alert} size={18} />
               {failedAt === "draft" ? "The draft didn't come through." : "PayPal provisioning stopped."}
             </div>
-            <p className="mt-1 text-foreground/85">{error}</p>
+            <p className="mt-1 text-foreground/85">{tidy(error)}</p>
             {failedAt === "provision" && liveSteps.length > 0 && (
               <p className="mt-1 text-xs text-muted">
                 {liveSteps.filter((s) => s.status === "ok").length} calls finished before it stopped. Trying again
@@ -314,7 +303,7 @@ function Stepper({ stage, phase, working }: { stage: number; phase: Phase; worki
             </div>
             <div className="mt-2.5 flex items-center gap-1.5">
               {complete ? (
-                <Check aria-hidden size={13} weight="bold" className="shrink-0 text-grade-excellent" />
+                <Icon icon={I.tick} size={13} className="shrink-0 text-grade-excellent" />
               ) : (
                 <span aria-hidden className="font-mono text-xs text-muted">
                   {s.n}
@@ -376,7 +365,7 @@ function FoundPricing({ result, title }: { result: AnalysisResult; title: string
           )}
         </div>
         <p className="flex items-start gap-2 border-t border-(--border) bg-surface px-3.5 py-3 text-sm leading-6">
-          <WarningCircle aria-hidden size={16} weight="fill" className="mt-1 shrink-0 text-grade-poor" />
+          <Icon icon={I.alert} size={16} className="mt-1 shrink-0 text-grade-poor" />
           <span className="text-pretty">{problem}</span>
         </p>
       </div>
@@ -388,7 +377,7 @@ function ProposalSkeleton({ tiers }: { tiers: number }) {
   return (
     <div role="status" aria-live="polite">
       <p className="flex items-center gap-2 text-sm text-muted">
-        <CircleNotch aria-hidden size={15} weight="bold" className="animate-spin-slow text-foreground" />
+        <Icon icon={I.loading} size={15} className="animate-spin-slow text-foreground" />
         Reading {tiers ? `${tiers} paid tier${tiers === 1 ? "" : "s"}` : "your pricing"} and drafting a PayPal
         catalog…
       </p>
@@ -443,7 +432,7 @@ function ProposalView({
       </div>
       {proposal.rationale && (
         <p className="mt-3 max-w-[70ch] text-pretty border-l-2 border-foreground pl-4 text-[0.95rem] leading-7 text-foreground/85">
-          {proposal.rationale}
+          {tidy(proposal.rationale)}
         </p>
       )}
 
@@ -484,7 +473,7 @@ function ProposalView({
                           </span>
                         )}
                       </span>
-                      {p.description && <span className="mt-0.5 block text-xs leading-5 text-muted">{p.description}</span>}
+                      {p.description && <span className="mt-0.5 block text-xs leading-5 text-muted">{tidy(p.description)}</span>}
                     </span>
                     <span className="shrink-0 text-right">
                       <span className="tabular block font-mono text-[15px] font-semibold">
@@ -505,8 +494,8 @@ function ProposalView({
         <ul className="mt-3 space-y-1 text-xs leading-5 text-muted">
           {proposal.notes.map((n) => (
             <li key={n} className="flex gap-2">
-              <ArrowRight aria-hidden size={11} weight="bold" className="mt-1 shrink-0 text-foreground" />
-              {n}
+              <Icon icon={I.arrowRight} size={11} className="mt-1 shrink-0 text-foreground" />
+              {tidy(n)}
             </li>
           ))}
         </ul>
@@ -519,10 +508,9 @@ function ProposalView({
           className="press btn-ink group inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
         >
           {dryRun ? "Approve & simulate (dry run)" : `Approve ${chosen} plan${chosen === 1 ? "" : "s"} & create in PayPal`}
-          <ArrowRight
-            aria-hidden
+          <Icon icon={I.arrowRight}
+           
             size={15}
-            weight="bold"
             className="transition-transform duration-200 group-enabled:group-hover:translate-x-0.5"
           />
         </button>
@@ -532,7 +520,7 @@ function ProposalView({
         {!canProvision && <span className="text-xs text-muted">Connect a PayPal sandbox app to create these plans.</span>}
       </div>
       <p className="mt-4 flex items-start gap-1.5 text-xs leading-5 text-muted">
-        <ShieldCheck aria-hidden size={14} weight="bold" className="mt-0.5 shrink-0 text-grade-excellent" />
+        <Icon icon={I.shield} size={14} className="mt-0.5 shrink-0 text-grade-excellent" />
         Guardrail: the agent can only create exactly what you approve. Any call with a different price is blocked
         before it reaches PayPal.
       </p>
@@ -617,7 +605,7 @@ function Ledger({
           {running ? (
             <span aria-hidden className="live-dot h-2 w-2 rounded-full bg-grade-excellent" />
           ) : (
-            <CheckCircle aria-hidden size={16} weight="fill" className="text-grade-excellent" />
+            <Icon icon={I.checkCircle} size={16} className="text-grade-excellent" />
           )}
           PayPal Agent Toolkit calls
         </h3>
@@ -639,16 +627,16 @@ function Ledger({
             >
               <span className="mt-0.5 grid h-5 w-5 place-items-center sm:mt-0">
                 {state === "done" ? (
-                  <CheckCircle aria-hidden size={19} weight="fill" className="text-grade-excellent" />
+                  <Icon icon={I.checkCircle} size={19} className="text-grade-excellent" />
                 ) : state === "now" ? (
-                  <CircleNotch aria-hidden size={17} weight="bold" className="animate-spin-slow" />
+                  <Icon icon={I.loading} size={17} className="animate-spin-slow" />
                 ) : state === "missing" ? (
-                  <XCircle aria-hidden size={19} weight="fill" className="text-grade-poor" />
+                  <Icon icon={I.cancel} size={19} className="text-grade-poor" />
                 ) : (
                   <span className="h-3.5 w-3.5 rounded-full border border-dashed border-(--border-strong)" />
                 )}
               </span>
-              <div className={`min-w-0 ${state === "queued" ? "opacity-50" : ""}`}>
+              <div className={`min-w-0 ${state === "queued" ? "text-muted [&_code]:font-medium" : ""}`}>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                   <code className="font-mono text-[13px] font-semibold">{planned.tool}</code>
                   {step && (
@@ -669,7 +657,7 @@ function Ledger({
                     {step.resultId}
                   </code>
                 ) : state === "now" ? (
-                  <span className="font-mono text-xs">calling PayPal…</span>
+                  <span className="shimmer-text font-mono text-xs">calling PayPal…</span>
                 ) : state === "queued" ? (
                   <span className="font-mono text-xs text-muted">queued</span>
                 ) : (
@@ -681,17 +669,16 @@ function Ledger({
         })}
         {extras.map((s, i) => (
           <li key={`extra-${i}`} className="grid grid-cols-[1.25rem_1fr] gap-3 bg-grade-mixed/5 px-4 py-2.5">
-            <WarningCircle
-              aria-hidden
+            <Icon icon={I.alert}
+             
               size={19}
-              weight="fill"
               className={s.status === "rejected" ? "text-grade-mixed" : "text-grade-poor"}
             />
             <div className="min-w-0 text-xs">
               <span className="font-mono font-semibold">{s.tool}</span>{" "}
               <span className="font-medium">{s.status === "rejected" ? "blocked by the guard" : "failed"}</span>
               <span className="mt-0.5 block truncate text-muted" title={s.message}>
-                {s.message}
+                {tidy(s.message)}
               </span>
             </div>
           </li>
@@ -768,11 +755,11 @@ function ProvisionedView({
             r.complete ? "bg-grade-excellent/10 text-grade-excellent" : "bg-grade-mixed/10 text-grade-mixed"
           }`}
         >
-          {r.complete ? <CheckCircle aria-hidden size={14} weight="fill" /> : <WarningCircle aria-hidden size={14} weight="fill" />}
+          {r.complete ? <Icon icon={I.checkCircle} size={14} /> : <Icon icon={I.alert} size={14} />}
           {r.complete ? "Live in PayPal sandbox" : "Partially provisioned"}
           {r.simulated ? ", simulated" : ""}
         </span>
-        <p className="font-display text-lg font-bold">{r.summary}</p>
+        <p className="font-display text-lg font-bold">{tidy(r.summary)}</p>
       </div>
       {r.agentError && byAgent < okCalls.length && (
         <p className="mt-2 text-xs leading-5 text-muted">
@@ -792,7 +779,7 @@ function ProvisionedView({
               className="link-mark inline-flex items-center gap-1 rounded-sm text-xs font-medium underline decoration-(--border-strong) underline-offset-4 hover:decoration-foreground"
             >
               Open in a new tab
-              <ArrowSquareOut aria-hidden size={13} weight="bold" />
+              <Icon icon={I.external} size={13} />
             </a>
           </div>
           <div className="mt-2 overflow-hidden rounded-lg border border-foreground/25 shadow-[0_18px_40px_-28px_rgba(14,17,23,0.45)]">
@@ -822,7 +809,7 @@ function ProvisionedView({
               aria-live="polite"
               className="press inline-flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-[#e9ebf0] hover:border-white/35 hover:bg-white/5 focus-visible:outline-white"
             >
-              {copied ? <Check aria-hidden size={13} weight="bold" /> : <Copy aria-hidden size={13} />}
+              {copied ? <Icon icon={I.tick} size={13} /> : <Icon icon={I.copy} size={13} />}
               {copied ? "Copied" : "Copy code"}
             </button>
           </div>
@@ -870,7 +857,7 @@ function FixInvoice({ result }: { result: AnalysisResult }) {
     <div className="mt-8 grid gap-5 border-t border-(--border) pt-8 md:grid-cols-[1fr_1.1fr] md:gap-10">
       <div className="flex gap-3.5">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-surface-2">
-          <Receipt aria-hidden size={18} weight="bold" />
+          <Icon icon={I.invoice} size={18} />
         </span>
         <div>
           <h3 className="font-display text-lg font-bold">Hiring someone for the copy fixes?</h3>
@@ -884,7 +871,7 @@ function FixInvoice({ result }: { result: AnalysisResult }) {
       <div>
         {state.kind === "ok" ? (
           <p role="status" className="flex items-center gap-1.5 text-sm text-grade-excellent md:mt-7">
-            <CheckCircle aria-hidden size={16} weight="fill" />
+            <Icon icon={I.checkCircle} size={16} />
             Draft invoice <code className="font-mono">{state.id}</code> created in the PayPal sandbox.
           </p>
         ) : state.kind === "soon" ? (
@@ -907,14 +894,14 @@ function FixInvoice({ result }: { result: AnalysisResult }) {
                 placeholder="client@example.com"
                 aria-invalid={state.kind === "error"}
                 aria-describedby={state.kind === "error" ? "invoice-error" : undefined}
-                className="min-w-0 flex-1 rounded-lg border border-(--border-strong) bg-surface px-3 py-2.5 text-sm placeholder:text-muted/80 focus-visible:border-foreground/60 focus-visible:ring-4 focus-visible:ring-foreground/8"
+                className="min-w-0 flex-1 rounded-lg border border-(--border-strong) bg-surface px-3 py-2.5 text-sm placeholder:text-muted focus-visible:border-foreground/60 focus-visible:ring-4 focus-visible:ring-foreground/8"
               />
               <button
                 type="submit"
                 disabled={state.kind === "busy"}
                 className="press inline-flex items-center justify-center gap-2 rounded-lg border border-foreground/80 bg-surface px-4 py-2.5 text-sm font-semibold hover:bg-background disabled:opacity-50"
               >
-                {state.kind === "busy" && <CircleNotch aria-hidden size={14} weight="bold" className="animate-spin-slow" />}
+                {state.kind === "busy" && <Icon icon={I.loading} size={14} className="animate-spin-slow" />}
                 {state.kind === "busy" ? "Drafting…" : "Draft PayPal invoice"}
               </button>
             </div>
@@ -922,7 +909,7 @@ function FixInvoice({ result }: { result: AnalysisResult }) {
         )}
         {state.kind === "error" && (
           <p id="invoice-error" role="alert" className="mt-2 text-xs text-grade-poor">
-            {state.text}
+            {tidy(state.text)}
           </p>
         )}
       </div>

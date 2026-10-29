@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { PayPalStatus } from "./CheckoutAgent";
 import PayPalButton from "./PayPalButton";
+import { tidy } from "@/lib/tidy";
 
 async function postJson(url: string, body?: unknown) {
   const res = await fetch(url, {
@@ -99,7 +100,7 @@ export default function ShipgradeUpgrade({ url, status }: { url: string; status:
           role="status"
           className={`mt-3 text-sm ${message.tone === "ok" ? "text-grade-excellent" : "text-grade-poor"}`}
         >
-          {message.text}
+          {tidy(message.text)}
         </p>
       )}
       <p className="mt-3 text-xs text-muted">Secure PayPal checkout. Cancel Watch anytime. No account needed to pay.</p>

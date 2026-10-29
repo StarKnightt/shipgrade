@@ -12,8 +12,9 @@
     "paypal:setup": "tsx --env-file-if-exists=.env.local scripts/paypal-setup.ts"
   },
   "dependencies": {
+    "@hugeicons/core-free-icons": "^4.4.0",
+    "@hugeicons/react": "^1.1.10",
     "@paypal/agent-toolkit": "1.11.0",
-    "@phosphor-icons/react": "^2.1.10",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",

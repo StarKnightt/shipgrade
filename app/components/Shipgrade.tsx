@@ -3,26 +3,13 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Check,
-  CircleNotch,
-  CreditCard,
-  CursorClick,
-  Eye,
-  Lightning,
-  PenNib,
-  ShieldCheck,
-  UsersThree,
-  WarningCircle,
-  type Icon,
-} from "@phosphor-icons/react";
+import { I, Icon, type Glyph } from "@/app/components/icons";
 import type { AnalysisResult, DimensionKey, DimensionResult, Finding } from "@/lib/analyze";
 import { formatTierPrice, type MonetizationSignals } from "@/lib/monetization";
 import { track } from "@/lib/analytics";
 import CheckoutAgent, { type PayPalStatus } from "./CheckoutAgent";
 import ShipgradeUpgrade from "./ShipgradeUpgrade";
+import { tidy } from "@/lib/tidy";
 
 const DEMO_SITE = "linear.app";
 
@@ -54,14 +41,14 @@ const HOW_IT_WORKS = [
   },
 ] as const;
 
-const DIMENSION_ICON: Record<DimensionKey, Icon> = {
-  valueProp: Eye,
-  audience: UsersThree,
-  differentiation: Lightning,
-  cta: CursorClick,
-  trust: ShieldCheck,
-  craft: PenNib,
-  monetization: CreditCard,
+const DIMENSION_ICON: Record<DimensionKey, Glyph> = {
+  valueProp: I.view,
+  audience: I.users,
+  differentiation: I.flash,
+  cta: I.cursor,
+  trust: I.shield,
+  craft: I.quill,
+  monetization: I.creditCard,
 };
 
 const SHORT_LABEL: Record<DimensionKey, string> = {
@@ -113,29 +100,63 @@ function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
 
-function useCountUp(target: number, duration = 900, delay = 0): number {
-  const [value, setValue] = useState(0);
-  const reduced = prefersReducedMotion();
+/**
+ * Counts up to `value` the first time it scrolls into view. Writes the DOM
+ * text directly so a frame of counting never re-renders React.
+ */
+function Ticker({
+  value,
+  delay = 0,
+  duration = 900,
+  className = "",
+  style,
+}: {
+  value: number;
+  delay?: number;
+  duration?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
-    if (reduced) return;
+    const el = ref.current;
+    if (!el) return;
+    if (prefersReducedMotion() || typeof IntersectionObserver === "undefined") {
+      el.textContent = String(value);
+      return;
+    }
+    el.textContent = "0";
     let raf = 0;
-    let start = 0;
-    const tick = (t: number) => {
-      if (!start) start = t;
-      const p = Math.min((t - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setValue(Math.round(target * eased));
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    const timer = setTimeout(() => {
-      raf = requestAnimationFrame(tick);
-    }, delay);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        io.disconnect();
+        timer = setTimeout(() => {
+          let start = 0;
+          const tick = (t: number) => {
+            if (!start) start = t;
+            const p = Math.min((t - start) / duration, 1);
+            el.textContent = String(Math.round(value * (1 - Math.pow(1 - p, 3))));
+            if (p < 1) raf = requestAnimationFrame(tick);
+          };
+          raf = requestAnimationFrame(tick);
+        }, delay);
+      },
+      { threshold: 0.5 },
+    );
+    io.observe(el);
     return () => {
+      io.disconnect();
       clearTimeout(timer);
       cancelAnimationFrame(raf);
     };
-  }, [target, duration, delay, reduced]);
-  return reduced ? target : value;
+  }, [value, delay, duration]);
+  return (
+    <span ref={ref} aria-hidden className={`tabular ${className}`} style={style}>
+      {value}
+    </span>
+  );
 }
 
 export default function Shipgrade() {
@@ -267,7 +288,7 @@ export default function Shipgrade() {
   async function share() {
     if (!result) return;
     const link = `${window.location.origin}/?url=${encodeURIComponent(hostOf(result.finalUrl))}`;
-    const text = `${result.grade} (${result.overallScore}/100) for ${hostOf(result.finalUrl)}, graded by Shipgrade.\n${result.verdict}\n${link}`;
+    const text = `${result.grade} (${result.overallScore}/100) for ${hostOf(result.finalUrl)}, graded by Shipgrade.\n${tidy(result.verdict)}\n${link}`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -301,7 +322,7 @@ export default function Shipgrade() {
               >
                 Grade your page.
                 <br />
-                Then ship the <span className="mark">checkout.</span>
+                Then ship the <span className="mark mark-draw">checkout.</span>
               </h1>
               <p
                 className="rise mt-5 max-w-[30rem] text-pretty text-[1.0625rem] leading-7 text-muted"
@@ -342,7 +363,7 @@ export default function Shipgrade() {
                       aria-invalid={status === "error"}
                       aria-describedby={status === "error" ? "grade-error" : undefined}
                       placeholder="yourproduct.com"
-                      className="h-12 w-full min-w-0 bg-transparent text-base text-foreground outline-none placeholder:text-muted/80"
+                      className="h-12 w-full min-w-0 bg-transparent text-base text-foreground outline-none placeholder:text-muted"
                     />
                   </div>
                   <button
@@ -350,18 +371,17 @@ export default function Shipgrade() {
                     className="press btn-ink group flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg px-5 text-[0.9375rem] font-semibold"
                   >
                     Grade it
-                    <ArrowRight
-                      aria-hidden
+                    <Icon icon={I.arrowRight}
+                     
                       size={16}
-                      weight="bold"
                       className="transition-transform duration-200 group-hover:translate-x-0.5"
                     />
                   </button>
                 </div>
                 {status === "error" && (
                   <p id="grade-error" role="alert" className="mt-2.5 flex items-start gap-1.5 text-sm text-grade-poor">
-                    <WarningCircle aria-hidden size={17} weight="fill" className="mt-px shrink-0" />
-                    {error}
+                    <Icon icon={I.alert} size={17} className="mt-px shrink-0" />
+                    {tidy(error)}
                   </p>
                 )}
               </form>
@@ -373,10 +393,9 @@ export default function Shipgrade() {
                   className="press link-mark group -mx-1 inline-flex items-center gap-1.5 rounded-md px-1 py-1 text-sm font-medium underline decoration-(--border-strong) decoration-1 underline-offset-[5px] hover:decoration-foreground"
                 >
                   Or watch a full run on {DEMO_SITE}
-                  <ArrowRight
-                    aria-hidden
+                  <Icon icon={I.arrowRight}
+                   
                     size={14}
-                    weight="bold"
                     className="transition-transform duration-200 group-hover:translate-x-0.5"
                   />
                 </button>
@@ -401,7 +420,16 @@ export default function Shipgrade() {
             </figure>
           </section>
 
-          <section aria-labelledby="how" className="mt-20 sm:mt-24">
+          <section aria-label="Why Shipgrade" className="mt-20 border-t border-(--border) pt-14 sm:mt-28 sm:pt-20">
+            <p className="font-display max-w-[34ch] text-[1.7rem] leading-[1.2] font-bold text-balance text-muted sm:text-[2.35rem]">
+              Most product pages lose ready buyers at the last step: a price with no way to pay.{" "}
+              <span className="text-foreground">
+                Shipgrade finds that gap, then builds the PayPal checkout that closes it.
+              </span>
+            </p>
+          </section>
+
+          <section aria-labelledby="how" className="mt-16 sm:mt-20">
             <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
               <h2 id="how" className="font-display text-2xl font-bold">
                 How it works
@@ -468,13 +496,13 @@ function LoadingState({ step, url }: { step: number; url: string }) {
             return (
               <li
                 key={s}
-                className={`flex items-center gap-2 ${state === "todo" ? "text-muted/70" : "text-foreground"}`}
+                className={`flex items-center gap-2 ${state === "todo" ? "text-muted" : "text-foreground"}`}
               >
                 <span className="grid h-4 w-4 shrink-0 place-items-center">
                   {state === "done" ? (
-                    <Check aria-hidden size={13} weight="bold" className="text-grade-excellent" />
+                    <Icon icon={I.tick} size={13} className="text-grade-excellent" />
                   ) : state === "now" ? (
-                    <CircleNotch aria-hidden size={14} weight="bold" className="animate-spin-slow" />
+                    <Icon icon={I.loading} size={14} className="animate-spin-slow" />
                   ) : (
                     <span className="h-1 w-1 rounded-full bg-current" />
                   )}
@@ -563,9 +591,8 @@ function ScoreStrip({ dimensions }: { dimensions: DimensionResult[] }) {
 
 function ScoreTile({ dim, index }: { dim: DimensionResult; index: number }) {
   const color = scoreColor(dim.score);
-  const count = useCountUp(dim.score, 800, 300 + index * 60);
   const isCheckout = dim.key === "monetization";
-  const IconC = DIMENSION_ICON[dim.key];
+  const glyph = DIMENSION_ICON[dim.key];
   return (
     <li className={`rise ${isCheckout ? "col-span-2 lg:col-span-1" : ""}`} style={{ "--i": index + 2 } as React.CSSProperties}>
       <a
@@ -575,13 +602,17 @@ function ScoreTile({ dim, index }: { dim: DimensionResult; index: number }) {
         }`}
       >
         <span className="flex items-center gap-1.5 text-xs text-muted group-hover:text-foreground">
-          <IconC aria-hidden size={14} weight="bold" />
+          <Icon icon={glyph} size={14} />
           {SHORT_LABEL[dim.key]}
           <span className="sr-only">: {dim.score} out of 100</span>
         </span>
-        <span aria-hidden className="tabular mt-1.5 font-mono text-2xl font-semibold" style={{ color }}>
-          {count}
-        </span>
+        <Ticker
+          value={dim.score}
+          delay={300 + index * 60}
+          duration={800}
+          className="mt-1.5 font-mono text-2xl font-semibold"
+          style={{ color }}
+        />
         <MiniRule score={dim.score} color={color} />
       </a>
     </li>
@@ -608,7 +639,6 @@ function Scorecard({
   const checkoutDim = result.dimensions.find((d) => d.key === "monetization");
   const others = result.dimensions.filter((d) => d.key !== "monetization");
   const color = bandColor(result.band);
-  const count = useCountUp(result.overallScore, 1100, 200);
 
   useEffect(() => {
     if (!demo) return;
@@ -631,7 +661,7 @@ function Scorecard({
               className="link-mark inline-flex items-center gap-0.5 rounded-sm font-medium underline decoration-(--border-strong) underline-offset-4"
             >
               {hostOf(result.finalUrl)}
-              <ArrowUpRight aria-hidden size={13} weight="bold" />
+              <Icon icon={I.arrowUpRight} size={13} />
             </a>
           </p>
           <p className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-muted">
@@ -645,22 +675,25 @@ function Scorecard({
           <div className="grid gap-6 sm:grid-cols-[auto_1fr] sm:gap-10">
             <div className="flex items-end gap-4 sm:block">
               <div
-                className="font-display text-[6.5rem] leading-[0.82] font-extrabold tracking-[-0.04em] sm:text-[8rem]"
+                className="grade-reveal font-display pb-1 text-[6.5rem] leading-[0.82] font-extrabold tracking-[-0.04em] sm:text-[8rem]"
                 style={{ color }}
               >
+                <span className="sr-only">Grade </span>
                 {result.grade}
               </div>
-              <div className="tabular font-mono text-sm text-muted sm:mt-3">
-                <span className="text-foreground">{count}</span> / 100
+              <div className="font-mono text-sm text-muted sm:mt-2">
+                <span className="sr-only">Score {result.overallScore} out of 100</span>
+                <Ticker value={result.overallScore} delay={200} duration={1100} className="text-foreground" />
+                <span aria-hidden> / 100</span>
               </div>
             </div>
             <div className="min-w-0 sm:pt-1">
               <h1 className="font-display text-pretty text-[1.65rem] leading-[1.15] font-bold sm:text-[2.1rem]">
-                {result.verdict}
+                {tidy(result.verdict)}
               </h1>
               {result.roast && (
                 <p className="mt-4 max-w-[60ch] text-pretty border-l-2 border-foreground pl-3.5 text-[0.95rem] leading-7 text-foreground/80">
-                  &ldquo;{result.roast}&rdquo;
+                  &ldquo;{tidy(result.roast)}&rdquo;
                 </p>
               )}
             </div>
@@ -692,7 +725,7 @@ function Scorecard({
           aria-live="polite"
           className="press inline-flex items-center justify-center gap-1.5 rounded-lg border border-(--border-strong) bg-surface px-5 py-2.5 text-sm font-medium hover:border-foreground/40"
         >
-          {copied && <Check aria-hidden size={14} weight="bold" className="text-grade-excellent" />}
+          {copied && <Icon icon={I.tick} size={14} className="text-grade-excellent" />}
           {copied ? "Copied with link" : "Copy result"}
         </button>
       </div>
@@ -700,16 +733,15 @@ function Scorecard({
   );
 }
 
-function ScoreHead({ label, score, count, as: H = "h3" }: { label: string; score: number; count: number; as?: "h2" | "h3" }) {
+function ScoreHead({ label, score, delay = 0, as: H = "h3" }: { label: string; score: number; delay?: number; as?: "h2" | "h3" }) {
   const color = scoreColor(score);
   return (
     <div className="flex items-baseline justify-between gap-3">
       <H className="font-display text-lg font-bold">{label}</H>
       <span className="flex items-baseline gap-0.5">
-        <span className="tabular font-mono text-2xl font-semibold" style={{ color }}>
-          {count}
-        </span>
-        <span className="font-mono text-xs text-muted">/100</span>
+        <span className="sr-only">{score} out of 100</span>
+        <Ticker value={score} delay={delay} duration={850} className="font-mono text-2xl font-semibold" style={{ color }} />
+        <span aria-hidden className="font-mono text-xs text-muted">/100</span>
       </span>
     </div>
   );
@@ -717,10 +749,9 @@ function ScoreHead({ label, score, count, as: H = "h3" }: { label: string; score
 
 function DimensionCard({ dim, delay }: { dim: DimensionResult; delay: number }) {
   const color = scoreColor(dim.score);
-  const count = useCountUp(dim.score, 850, delay);
   return (
     <article id={`dim-${dim.key}`} className="scroll-mt-24 bg-surface p-5 sm:p-6">
-      <ScoreHead label={dim.label} score={dim.score} count={count} />
+      <ScoreHead label={dim.label} score={dim.score} delay={delay} />
       <p className="mt-1 text-sm leading-6 text-muted">{dim.blurb}</p>
       <MiniRule score={dim.score} color={color} />
       <ul className="mt-5 space-y-3">
@@ -734,7 +765,6 @@ function DimensionCard({ dim, delay }: { dim: DimensionResult; delay: number }) 
 
 function CheckoutCard({ dim, checkout }: { dim: DimensionResult; checkout: MonetizationSignals }) {
   const color = scoreColor(dim.score);
-  const count = useCountUp(dim.score, 850, 420);
   const facts: [string, string][] = [
     ["Billing", BILLING_LABEL[checkout.billingModel]],
     [
@@ -756,14 +786,14 @@ function CheckoutCard({ dim, checkout }: { dim: DimensionResult; checkout: Monet
         <div className="p-5 sm:p-8">
           <p className="font-mono text-xs text-muted">Graded first</p>
           <div className="mt-1.5">
-            <ScoreHead label={dim.label} score={dim.score} count={count} as="h2" />
+            <ScoreHead label={dim.label} score={dim.score} delay={200} as="h2" />
           </div>
           <p className="mt-1 text-sm leading-6 text-muted">{dim.blurb}</p>
           <MiniRule score={dim.score} color={color} />
 
           {dim.explanation && (
             <div className="mt-6 border-l-2 border-foreground pl-4">
-              <p className="text-pretty text-[0.95rem] leading-7 text-foreground/90">{dim.explanation}</p>
+              <p className="text-pretty text-[0.95rem] leading-7 text-foreground/90">{tidy(dim.explanation)}</p>
               <p className="mt-1.5 font-mono text-[11px] text-muted">
                 {dim.explanationByAI ? "Explained by AI" : "Rule engine"}
               </p>
@@ -788,7 +818,7 @@ function CheckoutCard({ dim, checkout }: { dim: DimensionResult; checkout: Monet
                 className="link-mark inline-flex items-center gap-0.5 rounded-sm font-mono text-xs text-muted hover:text-foreground"
               >
                 {hostPath(checkout.pricingUrl)}
-                <ArrowUpRight aria-hidden size={11} weight="bold" />
+                <Icon icon={I.arrowUpRight} size={11} />
               </a>
             )}
           </div>
@@ -870,12 +900,12 @@ function FindingRow({ finding }: { finding: Finding }) {
         }`}
       >
         {isWin ? (
-          <Check aria-label="Working" size={11} weight="bold" />
+          <Icon icon={I.tick} aria-label="Working" size={11} />
         ) : (
-          <ArrowRight aria-label="Fix" size={11} weight="bold" />
+          <Icon icon={I.arrowRight} aria-label="Fix" size={11} />
         )}
       </span>
-      <span className="text-pretty text-foreground/85">{finding.text}</span>
+      <span className="text-pretty text-foreground/85">{tidy(finding.text)}</span>
     </li>
   );
 }

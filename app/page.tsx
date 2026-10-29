@@ -54,16 +54,68 @@ export default function Home() {
         </Suspense>
       </main>
 
-      <footer className="border-t border-(--border)">
-        <div className="mx-auto grid w-full max-w-6xl gap-4 px-5 py-8 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
-          <div className="flex items-center gap-2.5">
-            <Mark />
-            <span className="text-muted">Grade your product page. Then ship the checkout.</span>
+      <footer className="overflow-hidden border-t border-(--border)">
+        <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 pt-12 pb-8 text-sm sm:grid-cols-[1.4fr_1fr_1fr]">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <Mark />
+              <span className="font-display text-[1.05rem] font-bold">Shipgrade</span>
+            </div>
+            <p className="mt-3 max-w-[34ch] leading-6 text-muted">
+              Grade your product page. Then ship the checkout. Built for the PayPal AI Hackathon; payments run in the
+              PayPal sandbox, so no real money moves.
+            </p>
           </div>
-          <p className="text-xs leading-5 text-muted sm:text-right">
-            Built for the PayPal AI Hackathon.
-            <br className="hidden sm:block" /> Payments run in the PayPal sandbox, so no real money moves.
-          </p>
+          <nav aria-label="Product">
+            <h2 className="text-xs font-semibold">Product</h2>
+            <ul className="mt-3 space-y-2 text-muted">
+              <li>
+                <Link href={DEMO_HREF} className="rounded-sm hover:text-foreground">
+                  Run the demo
+                </Link>
+              </li>
+              <li>
+                <a href="#main" className="rounded-sm hover:text-foreground">
+                  Grade a page
+                </a>
+              </li>
+              <li>
+                <a href={SOURCE_HREF} target="_blank" rel="noopener noreferrer" className="rounded-sm hover:text-foreground">
+                  Source on GitHub
+                </a>
+              </li>
+            </ul>
+          </nav>
+          <nav aria-label="Built with">
+            <h2 className="text-xs font-semibold">Built with</h2>
+            <ul className="mt-3 space-y-2 text-muted">
+              <li>
+                <a
+                  href="https://github.com/paypal/agent-toolkit"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-sm hover:text-foreground"
+                >
+                  PayPal Agent Toolkit
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://developer.paypal.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-sm hover:text-foreground"
+                >
+                  PayPal JS SDK v6
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+        <div aria-hidden className="mx-auto w-full max-w-6xl px-5">
+          <div className="font-display -mb-[0.22em] text-[clamp(4.5rem,17.5vw,15.5rem)] leading-none font-extrabold tracking-[-0.045em] text-[#e2e5ea] select-none">
+            Shipgrade
+          </div>
         </div>
       </footer>
     </>

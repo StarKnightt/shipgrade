@@ -109,6 +109,50 @@ body {
   margin: 0 -0.08em;
 }
 
+/* The highlighter draws itself in once, left to right */
+@keyframes mark-draw {
+  from {
+    background-size: 0% 100%;
+  }
+}
+.mark-draw {
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  animation: mark-draw 700ms var(--ease-out) 450ms both;
+}
+
+/* The letter grade wipes up from its baseline, like ink being revealed */
+@keyframes grade-reveal {
+  from {
+    clip-path: inset(100% 0 0 0);
+    transform: translateY(12px);
+  }
+  to {
+    clip-path: inset(-10% 0 -10% 0);
+    transform: translateY(0);
+  }
+}
+.grade-reveal {
+  animation: grade-reveal 650ms var(--ease-out) 120ms both;
+}
+
+/* Working text: a light sweep across the letters while PayPal is answering */
+@keyframes shimmer-text {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+.shimmer-text {
+  color: transparent;
+  background: linear-gradient(90deg, var(--muted) 35%, var(--foreground) 50%, var(--muted) 65%) 0 0 / 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmer-text 1.6s linear infinite;
+}
+
 /* Hairline tick ruler, used by the score scale */
 .ticks {
   background-image: repeating-linear-gradient(
@@ -245,8 +289,15 @@ body {
   .marker-in,
   .row-in,
   .skeleton,
-  .live-dot {
+  .live-dot,
+  .mark-draw,
+  .grade-reveal {
     animation: none;
+  }
+  .shimmer-text {
+    animation: none;
+    color: var(--foreground);
+    background: none;
   }
   .animate-spin-slow {
     animation-duration: 2.4s;
