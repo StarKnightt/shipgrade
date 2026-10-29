@@ -1,23 +1,28 @@
 import type { Metadata } from "next";
-import { Fraunces, Hanken_Grotesk, Space_Mono } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import PendoInitializer from "./components/PendoInitializer";
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
+const cabinet = localFont({
+  variable: "--font-cabinet",
+  src: "./fonts/CabinetGrotesk-Variable.woff2",
+  weight: "100 900",
+  display: "swap",
 });
 
-const hanken = Hanken_Grotesk({
-  variable: "--font-hanken",
-  subsets: ["latin"],
+const switzer = localFont({
+  variable: "--font-switzer",
+  src: [
+    { path: "./fonts/Switzer-Variable.woff2", weight: "100 900", style: "normal" },
+    { path: "./fonts/Switzer-VariableItalic.woff2", weight: "100 900", style: "italic" },
+  ],
+  display: "swap",
 });
 
-const spaceMono = Space_Mono({
-  variable: "--font-space-mono",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["400", "700"],
 });
 
 const title = "Shipgrade: Grade your product page in 30 seconds";
@@ -57,7 +62,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${hanken.variable} ${spaceMono.variable} h-full antialiased`}
+      className={`${cabinet.variable} ${switzer.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
         <script

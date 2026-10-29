@@ -1,29 +1,39 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Shipgrade — "Product Report Card"
-   Warm paper, ink type, red-pen corrections. An editorial grading aesthetic.
+   Shipgrade: "Inspection sheet"
+   Cool instrument grey, near-black ink for every action, and color only where
+   it carries meaning: grade bands, and one highlighter yellow that matches the
+   PayPal button.
+   Radius scale: containers 12px, controls 8px, tags 6px.
 --------------------------------------------------------------------------- */
 
 :root {
-  /* Paper & ink */
-  --background: #f4f0e6;
-  --surface: #fdfbf5;
-  --surface-2: #ebe4d4;
-  --foreground: #211c15;
-  --muted: #6d6453;
-  --border: rgba(33, 28, 21, 0.14);
-  --border-strong: rgba(33, 28, 21, 0.26);
+  --background: #f3f4f6;
+  --surface: #fcfcfd;
+  --surface-2: #eceef2;
+  --foreground: #0e1117;
+  --muted: #565d6b;
+  --border: rgba(14, 17, 23, 0.09);
+  --border-strong: rgba(14, 17, 23, 0.18);
 
-  /* Red pen */
-  --accent: #cf3a26;
-  --accent-ink: #fdf4ec;
+  /* Ink is the only action color. */
+  --ink: #0e1117;
+  --ink-hover: #2a303c;
+  --ink-fg: #f6f7f9;
 
-  /* Academic grade bands */
-  --grade-excellent: #2f7d4f;
-  --grade-good: #3a8a82;
-  --grade-mixed: #bb7d18;
-  --grade-poor: #cf3a26;
+  /* Highlighter: same family as PayPal's #ffc439 button. Fill only, never text. */
+  --mark: #ffd84a;
+  --mark-soft: rgba(255, 216, 74, 0.45);
+
+  /* Grade bands (all pass 4.5:1 on --surface) */
+  --grade-excellent: #157347;
+  --grade-good: #1d6a86;
+  --grade-mixed: #9a5800;
+  --grade-poor: #c02f2a;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 @theme inline {
@@ -32,16 +42,21 @@
   --color-surface-2: var(--surface-2);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-accent-ink: var(--accent-ink);
+  --color-ink: var(--ink);
+  --color-ink-hover: var(--ink-hover);
+  --color-ink-fg: var(--ink-fg);
+  --color-mark: var(--mark);
+  /* legacy aliases so any untouched markup still resolves to the ink system */
+  --color-accent: var(--ink);
+  --color-accent-ink: var(--ink-fg);
   --color-grade-excellent: var(--grade-excellent);
   --color-grade-good: var(--grade-good);
   --color-grade-mixed: var(--grade-mixed);
   --color-grade-poor: var(--grade-poor);
 
-  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
-  --font-mono: var(--font-space-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-sans: var(--font-switzer), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cabinet), var(--font-switzer), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
 }
 
 * {
@@ -50,53 +65,22 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  /* faint warm vignette so the paper feels lit, not flat */
-  background-image:
-    radial-gradient(
-      55rem 36rem at 50% -8rem,
-      rgba(207, 58, 38, 0.05),
-      transparent 60%
-    ),
-    radial-gradient(
-      40rem 40rem at 100% 110%,
-      rgba(58, 138, 130, 0.05),
-      transparent 55%
-    );
-  background-attachment: fixed;
-  background-repeat: no-repeat;
 }
 
-/* Paper grain — a fixed, low-opacity noise layer behind everything */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.5;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
-  background-size: 140px 140px;
-}
-
-/* Faint ledger rule lines for the editorial backdrop */
-.bg-ruled {
-  background-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(2rem - 1px),
-    rgba(33, 28, 21, 0.04) calc(2rem - 1px),
-    rgba(33, 28, 21, 0.04) 2rem
-  );
-  background-size: 100% 2rem;
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  font-feature-settings: normal;
 }
 
 .text-balance {
@@ -107,36 +91,72 @@ body::before {
   text-wrap: pretty;
 }
 
-/* Display serif gets tighter optical spacing */
-.font-serif {
-  font-optical-sizing: auto;
+.tabular {
+  font-variant-numeric: tabular-nums;
 }
 
-/* Motion tokens ------------------------------------------------------------ */
-:root {
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+/* Highlighter stroke behind a phrase. Wraps cleanly across lines. */
+.mark {
+  background-image: linear-gradient(
+    transparent 0.58em,
+    var(--mark) 0.58em,
+    var(--mark) 1.02em,
+    transparent 1.02em
+  );
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 0.08em;
+  margin: 0 -0.08em;
 }
 
-/* Pressable: instant, physical feedback on every button */
+/* Hairline tick ruler, used by the score scale */
+.ticks {
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--border-strong) 0,
+    var(--border-strong) 1px,
+    transparent 1px,
+    transparent 10%
+  );
+}
+
+/* Pressable: instant physical feedback */
 .press {
   transition:
     transform 160ms var(--ease-out),
-    background-color 200ms ease,
-    border-color 200ms ease,
-    color 200ms ease,
-    opacity 200ms ease;
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    opacity 180ms ease,
+    box-shadow 180ms ease;
   touch-action: manipulation;
 }
 .press:active:not(:disabled) {
   transform: scale(0.97);
 }
 
+/* Primary action: ink button */
+.btn-ink {
+  background: var(--ink);
+  color: var(--ink-fg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 1px 2px rgba(14, 17, 23, 0.18);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-ink:hover:not(:disabled) {
+    background: var(--ink-hover);
+  }
+  .link-mark:hover {
+    background-color: var(--mark-soft);
+  }
+}
+
 /* Staggered entry: set --i on each child */
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -144,114 +164,92 @@ body::before {
   }
 }
 .rise {
-  animation: rise 420ms var(--ease-out) both;
-  animation-delay: calc(var(--i, 0) * 60ms);
+  animation: rise 380ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 50ms);
 }
 
-/* Skeleton shimmer in the paper palette */
+.animate-fade-up {
+  animation: rise 420ms var(--ease-out) both;
+}
+
+/* Score marker travels from 0 to its value once */
+@keyframes slide-in-x {
+  from {
+    transform: translateX(var(--from, -100%));
+  }
+}
+.marker-in {
+  animation: slide-in-x 900ms var(--ease-out) both;
+  animation-delay: 200ms;
+}
+
+/* Skeleton shimmer */
 @keyframes shimmer {
   to {
     background-position: -200% 0;
   }
 }
 .skeleton {
-  border-radius: 0.5rem;
-  background: linear-gradient(
-    90deg,
-    var(--surface-2) 0%,
-    rgba(253, 251, 245, 0.9) 45%,
-    var(--surface-2) 90%
-  );
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--surface-2) 0%, #f6f7f9 45%, var(--surface-2) 90%);
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
 }
 
-/* A ledger row being written: ink fills in from the left */
-@keyframes ink {
-  from {
-    clip-path: inset(0 100% 0 0);
-    opacity: 0.4;
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-    opacity: 1;
-  }
-}
-.ink-in {
-  animation: ink 520ms var(--ease-out) both;
-}
-
-/* Live dot: only for real "working right now" state */
-@keyframes live-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(207, 58, 38, 0.45);
-  }
-  100% {
-    box-shadow: 0 0 0 7px rgba(207, 58, 38, 0);
-  }
-}
-.live-ring {
-  animation: live-ring 1.2s var(--ease-out) infinite;
-}
-
-.tabular {
-  font-variant-numeric: tabular-nums;
-}
-
-/* Animations ------------------------------------------------------------- */
-@keyframes fade-up {
+/* A ledger row arriving */
+@keyframes row-in {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(-4px);
+    background-color: var(--mark-soft);
+  }
+  60% {
+    background-color: var(--mark-soft);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+    background-color: transparent;
   }
 }
-
-.animate-fade-up {
-  animation: fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+.row-in {
+  animation: row-in 900ms var(--ease-out) both;
 }
 
-/* The grade seal lands like an inked stamp */
-@keyframes stamp-in {
-  0% {
-    opacity: 0;
-    transform: rotate(-14deg) scale(1.45);
-  }
-  55% {
-    opacity: 1;
-    transform: rotate(-4deg) scale(0.94);
-  }
+/* Live indicator: only for real "working right now" state */
+@keyframes pulse-dot {
+  0%,
   100% {
-    transform: rotate(-3deg) scale(1);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
   }
 }
-
-.animate-stamp {
-  animation: stamp-in 0.6s cubic-bezier(0.2, 0.85, 0.3, 1.3) both;
+.live-dot {
+  animation: pulse-dot 1.2s ease-in-out infinite;
 }
 
-@keyframes spin-slow {
+@keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
-
 .animate-spin-slow {
-  animation: spin-slow 1.1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-fade-up,
-  .animate-stamp,
-  .animate-spin-slow,
   .rise,
-  .ink-in,
-  .live-ring,
-  .skeleton {
+  .animate-fade-up,
+  .marker-in,
+  .row-in,
+  .skeleton,
+  .live-dot {
     animation: none;
+  }
+  .animate-spin-slow {
+    animation-duration: 2.4s;
   }
   .press:active:not(:disabled) {
     transform: none;
@@ -261,14 +259,14 @@ body::before {
   }
 }
 
-/* Focus ring ------------------------------------------------------------- */
+/* Focus ------------------------------------------------------------------ */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-/* Text fields signal focus via their rounded container (focus-within),
-   not a hard-edged outline that ignores the container shape. */
+/* Text fields show focus on their container (focus-within) instead */
 input:focus,
 input:focus-visible,
 textarea:focus,
@@ -277,6 +275,6 @@ textarea:focus-visible {
 }
 
 ::selection {
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: var(--mark);
+  color: var(--foreground);
 }
