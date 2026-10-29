@@ -74,25 +74,23 @@ export default function ShipgradeUpgrade({ url, status }: { url: string; status:
   ];
 
   return (
-    <section className="animate-fade-up mt-4 rounded-2xl border border-(--border) bg-surface p-5 shadow-sm sm:p-7">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-serif text-xl font-semibold tracking-tight">Go deeper with Shipgrade</h3>
-        <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-          Paid with PayPal · sandbox
-        </span>
+    <section aria-labelledby="go-deeper" className="animate-fade-up mt-16">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+        <h2 id="go-deeper" className="font-display text-2xl font-bold">
+          Go deeper with Shipgrade
+        </h2>
+        <p className="text-sm text-muted">Paid with PayPal, in the sandbox.</p>
       </div>
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <div className="mt-4 grid gap-px overflow-hidden rounded-xl border border-(--border) bg-(--border) md:grid-cols-2">
         {offers.map((o) => (
-          <div key={o.key} className="flex flex-col rounded-xl border border-(--border) bg-background/60 p-4">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="font-semibold">{o.name}</span>
-              <span>
-                <span className="font-mono text-xl font-bold">{o.price}</span>
-                <span className="ml-1 text-xs text-muted">{o.cadence}</span>
-              </span>
-            </div>
-            <p className="mt-1.5 flex-1 text-sm leading-6 text-muted">{o.blurb}</p>
-            <div className="mt-3">{o.button}</div>
+          <div key={o.key} className="flex flex-col bg-surface p-5 sm:p-6">
+            <h3 className="font-display text-lg font-bold">{o.name}</h3>
+            <p className="mt-1 flex items-baseline gap-1.5">
+              <span className="tabular font-mono text-3xl font-semibold tracking-tight">{o.price}</span>
+              <span className="text-sm text-muted">{o.cadence}</span>
+            </p>
+            <p className="mt-3 max-w-[42ch] flex-1 text-sm leading-6 text-muted">{o.blurb}</p>
+            <div className="mt-5">{o.button}</div>
           </div>
         ))}
       </div>
@@ -104,7 +102,7 @@ export default function ShipgradeUpgrade({ url, status }: { url: string; status:
           {message.text}
         </p>
       )}
-      <p className="mt-3 text-xs text-muted">Secure PayPal checkout · cancel Watch anytime · no account needed to pay.</p>
+      <p className="mt-3 text-xs text-muted">Secure PayPal checkout. Cancel Watch anytime. No account needed to pay.</p>
     </section>
   );
 }

@@ -6,6 +6,7 @@ import {
   ArrowSquareOut,
   Check,
   CheckCircle,
+  CircleNotch,
   Copy,
   Receipt,
   ShieldCheck,
@@ -84,8 +85,10 @@ export default function CheckoutAgent({
   const autoDrafted = useRef(false);
   useEffect(() => {
     if (!autoDraft || autoDrafted.current) return;
-    autoDrafted.current = true;
-    const t = setTimeout(draft, 400);
+    const t = setTimeout(() => {
+      autoDrafted.current = true;
+      draft();
+    }, 400);
     return () => clearTimeout(t);
     // draft is stable for the lifetime of this result
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,31 +170,31 @@ export default function CheckoutAgent({
     <section
       id="checkout-agent"
       aria-labelledby="agent-title"
-      className="animate-fade-up mt-5 scroll-mt-20 overflow-hidden rounded-2xl border-2 border-accent/55 bg-surface shadow-[0_24px_50px_-34px_rgba(207,58,38,0.55)]"
+      className="animate-fade-up mt-6 scroll-mt-20 overflow-hidden rounded-xl border border-foreground/30 bg-surface shadow-[0_24px_48px_-32px_rgba(14,17,23,0.4)]"
     >
-      <div className="border-b border-(--border) bg-[linear-gradient(180deg,rgba(207,58,38,0.05),transparent)] p-5 sm:p-7">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">Checkout agent</span>
-          <span className="text-xs text-muted">PayPal Agent Toolkit, sandbox</span>
+      <div className="border-b border-(--border) p-5 sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <p className="font-mono text-xs text-muted">Checkout agent · PayPal Agent Toolkit</p>
+          <SandboxStatus status={status} />
         </div>
-        <h2 id="agent-title" className="mt-1.5 font-serif text-[1.7rem] font-semibold leading-tight tracking-tight">
-          Don&apos;t just grade it. Ship the fix.
+        <h2 id="agent-title" className="font-display mt-3 text-[1.9rem] leading-[1.1] font-extrabold sm:text-[2.25rem]">
+          Don&apos;t just grade it. <span className="mark">Ship the fix.</span>
         </h2>
-        <p className="mt-1.5 max-w-2xl text-pretty text-sm leading-6 text-muted">
+        <p className="mt-2.5 max-w-2xl text-pretty text-[0.95rem] leading-7 text-muted">
           The agent turns the pricing it just graded into a real PayPal catalog. You approve every plan before it
           touches PayPal, then you get a working checkout and the code to ship it.
         </p>
         <Stepper stage={stage} phase={phase} working={working} />
       </div>
 
-      <div className="p-5 sm:p-7">
-        <SandboxBanner status={status} />
+      <div className="p-5 sm:p-8">
+        <SandboxWarning status={status} />
 
         {phase === "idle" && (
-          <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr] lg:items-start">
-            <FoundPricing result={result} title="Before: what buyers see today" annotate />
-            <div className="rounded-xl border border-(--border) bg-background/60 p-5 lg:mt-7">
-              <h3 className="font-serif text-xl font-semibold leading-snug">
+          <div className="grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:items-start">
+            <FoundPricing result={result} title="Before: what buyers see today" />
+            <div className="rounded-lg border border-(--border) bg-background/70 p-5 sm:p-6 lg:mt-7">
+              <h3 className="font-display text-xl leading-snug font-bold">
                 {paidTiers.length
                   ? `Turn ${paidTiers.length} paid tier${paidTiers.length === 1 ? "" : "s"} into a PayPal checkout`
                   : "No paid plans to turn into a checkout"}
@@ -203,13 +206,18 @@ export default function CheckoutAgent({
               </p>
               <button
                 onClick={draft}
-                className="press group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-ink shadow-[0_6px_18px_-8px_rgba(207,58,38,0.7)] hover:bg-[#bb3220] sm:w-auto"
+                className="press btn-ink group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold sm:w-auto"
               >
                 Draft my PayPal catalog
-                <ArrowRight aria-hidden size={16} weight="bold" className="transition-transform duration-200 group-hover:translate-x-0.5" />
+                <ArrowRight
+                  aria-hidden
+                  size={15}
+                  weight="bold"
+                  className="transition-transform duration-200 group-hover:translate-x-0.5"
+                />
               </button>
               <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
-                <ShieldCheck aria-hidden size={14} weight="duotone" className="text-grade-excellent" />
+                <ShieldCheck aria-hidden size={14} weight="bold" className="text-grade-excellent" />
                 Nothing is created in PayPal until you approve.
               </p>
             </div>
@@ -219,7 +227,7 @@ export default function CheckoutAgent({
         {phase === "proposing" && <ProposalSkeleton tiers={paidTiers.length} />}
 
         {phase === "error" && (
-          <div role="alert" className="rounded-xl border border-grade-poor/40 bg-grade-poor/8 p-4 text-sm">
+          <div role="alert" className="rounded-lg border border-grade-poor/35 bg-grade-poor/5 p-4 text-sm sm:p-5">
             <div className="flex items-center gap-2 font-semibold text-grade-poor">
               <WarningCircle aria-hidden size={18} weight="fill" />
               {failedAt === "draft" ? "The draft didn't come through." : "PayPal provisioning stopped."}
@@ -231,17 +239,17 @@ export default function CheckoutAgent({
                 creates a fresh catalog.
               </p>
             )}
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               <button
                 onClick={failedAt === "draft" || !proposal ? draft : approve}
-                className="press rounded-lg bg-accent px-4 py-2 text-xs font-semibold text-accent-ink hover:bg-[#bb3220]"
+                className="press btn-ink rounded-lg px-4 py-2 text-xs font-semibold"
               >
                 Try again
               </button>
               {proposal && (
                 <button
                   onClick={() => setPhase("proposed")}
-                  className="press rounded-lg border border-(--border-strong) px-4 py-2 text-xs font-medium hover:border-accent"
+                  className="press rounded-lg border border-(--border-strong) bg-surface px-4 py-2 text-xs font-medium hover:border-foreground/40"
                 >
                   Back to the draft
                 </button>
@@ -291,38 +299,31 @@ function Stepper({ stage, phase, working }: { stage: number; phase: Phase; worki
     { n: 3, title: "Live checkout", detail: "Real PayPal plans and buttons" },
   ];
   return (
-    <ol className="mt-6 grid grid-cols-3 gap-2 sm:gap-3" aria-label="Checkout agent progress">
-      {steps.map((s, i) => {
+    <ol className="mt-7 grid grid-cols-3 gap-3 sm:gap-4" aria-label="Checkout agent progress">
+      {steps.map((s) => {
         const complete = s.n < stage || (s.n === 3 && phase === "done");
         const current = s.n === stage && !complete;
         return (
           <li key={s.n} aria-current={current ? "step" : undefined}>
-            <div className="flex items-start gap-2.5">
+            <div className="relative h-1 overflow-hidden rounded-full bg-surface-2">
               <span
-                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full font-mono text-[11px] font-bold transition-colors duration-300 ${
-                  complete
-                    ? "bg-grade-excellent text-white"
-                    : current
-                      ? `bg-accent text-accent-ink ${working ? "live-ring" : ""}`
-                      : "border border-(--border-strong) bg-surface text-muted"
+                className={`absolute inset-y-0 left-0 rounded-full transition-[width,background-color] duration-500 ease-(--ease-out) ${
+                  complete ? "w-full bg-foreground" : current ? `w-1/2 bg-foreground ${working ? "live-dot" : ""}` : "w-0"
                 }`}
-              >
-                {complete ? <Check aria-hidden size={12} weight="bold" /> : s.n}
-              </span>
-              <span className="min-w-0">
-                <span className={`block text-sm font-semibold ${current || complete ? "" : "text-muted"}`}>{s.title}</span>
-                <span className="mt-0.5 hidden text-xs text-muted sm:block">{s.detail}</span>
-                <span className="sr-only">{complete ? "(done)" : current ? "(current)" : "(next)"}</span>
-              </span>
-              {i < steps.length - 1 && (
-                <span
-                  aria-hidden
-                  className={`mt-3 hidden h-[2px] min-w-3 flex-1 rounded-full sm:block transition-colors duration-500 ${
-                    complete ? "bg-grade-excellent" : "bg-(--border-strong)"
-                  }`}
-                />
-              )}
+              />
             </div>
+            <div className="mt-2.5 flex items-center gap-1.5">
+              {complete ? (
+                <Check aria-hidden size={13} weight="bold" className="shrink-0 text-grade-excellent" />
+              ) : (
+                <span aria-hidden className="font-mono text-xs text-muted">
+                  {s.n}
+                </span>
+              )}
+              <span className={`text-sm font-semibold ${current || complete ? "" : "text-muted"}`}>{s.title}</span>
+              <span className="sr-only">{complete ? "(done)" : current ? "(current)" : "(next)"}</span>
+            </div>
+            <span className="mt-0.5 hidden text-xs text-muted sm:block">{s.detail}</span>
           </li>
         );
       })}
@@ -330,7 +331,7 @@ function Stepper({ stage, phase, working }: { stage: number; phase: Phase; worki
   );
 }
 
-function FoundPricing({ result, title, annotate = false }: { result: AnalysisResult; title: string; annotate?: boolean }) {
+function FoundPricing({ result, title }: { result: AnalysisResult; title: string }) {
   const c = result.checkout;
   const host = (() => {
     try {
@@ -340,42 +341,44 @@ function FoundPricing({ result, title, annotate = false }: { result: AnalysisRes
     }
   })();
   const ctaHint = c.tiers.find((t) => t.ctaText && !t.isCustom)?.ctaText;
+  const problem = c.providers.length
+    ? `Payments run through ${c.providers.join(", ")}.${c.providers.includes("PayPal") ? "" : " No PayPal, no Pay Later."}`
+    : `No way to pay on this page. ${ctaHint ? `“${ctaHint}” sends buyers away first.` : "Buyers have to leave to pay."}`;
   return (
     <div>
       <h3 className="text-sm font-semibold">{title}</h3>
-      <div className="relative mt-2 rounded-xl border border-dashed border-(--border-strong) bg-background/60 p-4">
-        <div className="font-mono text-[11px] text-muted">{host}</div>
-        {c.tiers.length ? (
-          <ul className="mt-2 grid grid-cols-2 gap-2">
-            {c.tiers.slice(0, 4).map((t) => (
-              <li key={t.id} className="rounded-lg border border-(--border) bg-surface p-3">
-                <div className="truncate text-sm font-semibold">{t.name}</div>
-                <div className="tabular font-mono text-sm">
-                  {t.isCustom ? "Custom" : t.isFree || !t.amount ? "Free" : `$${t.amount}`}
-                  {!t.isCustom && !t.isFree && t.amount ? (
-                    <span className="text-muted">{FOUND_INTERVAL[t.interval] ?? ""}</span>
-                  ) : null}
-                </div>
-                <div className="mt-2 truncate rounded-md border border-(--border-strong) px-2 py-1 text-center text-xs text-muted">
-                  {t.ctaText ?? (t.isCustom ? "Contact sales" : "No button")}
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-sm text-muted">No pricing tiers were readable on this page.</p>
-        )}
-        {annotate ? (
-          <p className="mt-4 -rotate-[1.2deg] font-serif text-[1.05rem] italic leading-6 text-accent">
-            {c.providers.length
-              ? `Payments run through ${c.providers.join(", ")}.${c.providers.includes("PayPal") ? "" : " No PayPal, no Pay Later."}`
-              : `No way to pay on this page. ${ctaHint ? `“${ctaHint}” sends buyers away first.` : "Buyers have to leave to pay."}`}
-          </p>
-        ) : (
-          <p className="mt-3 text-xs text-grade-poor">
-            {c.providers.length ? `Payments: ${c.providers.join(", ")}` : "No payment button: buyers leave the page to pay."}
-          </p>
-        )}
+      <div className="mt-2 overflow-hidden rounded-lg border border-(--border-strong) bg-background">
+        <div className="flex items-center gap-1.5 border-b border-(--border) bg-surface-2/60 px-3 py-2">
+          <span aria-hidden className="h-2 w-2 rounded-full bg-foreground/15" />
+          <span aria-hidden className="h-2 w-2 rounded-full bg-foreground/15" />
+          <span className="ml-2 font-mono text-[11px] text-muted">{host}</span>
+        </div>
+        <div className="p-3.5">
+          {c.tiers.length ? (
+            <ul className="grid grid-cols-2 gap-2">
+              {c.tiers.slice(0, 4).map((t) => (
+                <li key={t.id} className="rounded-md border border-(--border) bg-surface p-3">
+                  <div className="truncate text-sm font-semibold">{t.name}</div>
+                  <div className="tabular mt-0.5 font-mono text-sm">
+                    {t.isCustom ? "Custom" : t.isFree || !t.amount ? "Free" : `$${t.amount}`}
+                    {!t.isCustom && !t.isFree && t.amount ? (
+                      <span className="text-muted">{FOUND_INTERVAL[t.interval] ?? ""}</span>
+                    ) : null}
+                  </div>
+                  <div className="mt-2.5 truncate rounded border border-(--border-strong) px-2 py-1 text-center text-xs text-muted">
+                    {t.ctaText ?? (t.isCustom ? "Contact sales" : "No button")}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted">No pricing tiers were readable on this page.</p>
+          )}
+        </div>
+        <p className="flex items-start gap-2 border-t border-(--border) bg-surface px-3.5 py-3 text-sm leading-6">
+          <WarningCircle aria-hidden size={16} weight="fill" className="mt-1 shrink-0 text-grade-poor" />
+          <span className="text-pretty">{problem}</span>
+        </p>
       </div>
     </div>
   );
@@ -385,17 +388,18 @@ function ProposalSkeleton({ tiers }: { tiers: number }) {
   return (
     <div role="status" aria-live="polite">
       <p className="flex items-center gap-2 text-sm text-muted">
-        <span className="live-ring h-2 w-2 rounded-full bg-accent" />
-        Reading {tiers ? `${tiers} paid tier${tiers === 1 ? "" : "s"}` : "your pricing"} and drafting a PayPal catalog…
+        <CircleNotch aria-hidden size={15} weight="bold" className="animate-spin-slow text-foreground" />
+        Reading {tiers ? `${tiers} paid tier${tiers === 1 ? "" : "s"}` : "your pricing"} and drafting a PayPal
+        catalog…
       </p>
-      <div className="mt-4 space-y-2">
+      <div className="mt-5 space-y-2">
         <div className="skeleton h-6 w-1/3" />
         <div className="skeleton h-12 w-full" />
       </div>
-      <div className="mt-4 divide-y divide-(--border) rounded-xl border border-(--border) bg-background/60">
+      <div className="mt-5 divide-y divide-(--border) rounded-lg border border-(--border) bg-background/60">
         {Array.from({ length: Math.max(2, Math.min(tiers + 1, 5)) }).map((_, i) => (
           <div key={i} className="flex items-center gap-3 px-4 py-3.5">
-            <div className="skeleton h-5 w-5 rounded" />
+            <div className="skeleton h-[18px] w-[18px] rounded" />
             <div className="flex-1 space-y-1.5">
               <div className="skeleton h-3.5 w-1/4" />
               <div className="skeleton h-3 w-2/3" />
@@ -429,22 +433,22 @@ function ProposalView({
   return (
     <div className="animate-fade-up">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-serif text-xl font-semibold">
+        <h3 className="font-display text-xl font-bold">
           {proposal.product.name}
           <span className="ml-2 font-sans text-xs font-normal text-muted">PayPal catalog product</span>
         </h3>
-        <span className="rounded-md border border-(--border-strong) px-2 py-0.5 text-xs text-muted">
+        <span className="font-mono text-xs text-muted">
           {proposal.source === "ai" ? "AI-refined draft" : "Rule-engine draft"}
         </span>
       </div>
       {proposal.rationale && (
-        <p className="mt-2 text-pretty border-l-2 border-accent pl-3.5 font-serif text-[0.95rem] italic leading-7 text-foreground/85">
+        <p className="mt-3 max-w-[70ch] text-pretty border-l-2 border-foreground pl-4 text-[0.95rem] leading-7 text-foreground/85">
           {proposal.rationale}
         </p>
       )}
 
       {proposal.plans.length === 0 ? (
-        <div className="mt-4 rounded-xl border border-dashed border-(--border-strong) bg-background/60 p-5 text-sm">
+        <div className="mt-5 rounded-lg border border-dashed border-(--border-strong) bg-background/60 p-5 text-sm">
           <p className="font-semibold">No paid plans to create.</p>
           <p className="mt-1 text-muted">
             Free and contact-sales tiers stay off PayPal. Grade your pricing page directly if your paid plans live
@@ -452,30 +456,30 @@ function ProposalView({
           </p>
         </div>
       ) : (
-        <fieldset className="mt-4">
-          <legend className="sr-only">Plans to create in PayPal</legend>
-          <ul className="divide-y divide-(--border) overflow-hidden rounded-xl border border-(--border) bg-background/60">
+        <fieldset className="mt-5">
+          <legend className="mb-2 text-sm font-semibold">Plans to create in PayPal</legend>
+          <ul className="divide-y divide-(--border) overflow-hidden rounded-lg border border-(--border-strong) bg-surface">
             {proposal.plans.map((p, i) => {
               const on = !excluded.has(p.tierId);
               return (
                 <li key={p.tierId} className="rise" style={{ "--i": i } as React.CSSProperties}>
-                  <label className="flex cursor-pointer items-center gap-3 px-4 py-3.5 transition-colors duration-150 hover:bg-surface has-focus-visible:bg-surface">
+                  <label className="flex cursor-pointer items-center gap-3.5 px-4 py-3.5 transition-colors duration-150 hover:bg-background has-focus-visible:bg-background">
                     <input
                       type="checkbox"
                       checked={on}
                       onChange={() => onToggle(p.tierId)}
-                      className="h-[18px] w-[18px] shrink-0 cursor-pointer accent-(--accent)"
+                      className="h-[18px] w-[18px] shrink-0 cursor-pointer accent-(--ink)"
                     />
                     <span className={`min-w-0 flex-1 transition-opacity duration-200 ${on ? "" : "opacity-45 line-through"}`}>
                       <span className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                         {p.name}
                         {p.suggested && (
-                          <span className="rounded-md bg-accent/10 px-1.5 py-px text-[11px] font-medium text-accent">
-                            Suggested
+                          <span className="rounded-[5px] bg-mark px-1.5 py-px text-[11px] font-semibold">
+                            Suggested by the agent
                           </span>
                         )}
                         {p.trialDays > 0 && (
-                          <span className="rounded-md border border-(--border-strong) px-1.5 py-px text-[11px] text-muted">
+                          <span className="rounded-[5px] border border-(--border-strong) px-1.5 py-px text-[11px] font-medium text-muted">
                             {p.trialDays}-day trial
                           </span>
                         )}
@@ -483,7 +487,7 @@ function ProposalView({
                       {p.description && <span className="mt-0.5 block text-xs leading-5 text-muted">{p.description}</span>}
                     </span>
                     <span className="shrink-0 text-right">
-                      <span className="tabular block font-mono text-sm font-bold">
+                      <span className="tabular block font-mono text-[15px] font-semibold">
                         ${p.amount}
                         <span className="font-normal text-muted">{INTERVAL_LABEL[p.interval]}</span>
                       </span>
@@ -501,9 +505,7 @@ function ProposalView({
         <ul className="mt-3 space-y-1 text-xs leading-5 text-muted">
           {proposal.notes.map((n) => (
             <li key={n} className="flex gap-2">
-              <span aria-hidden className="text-accent">
-                <ArrowRight size={11} weight="bold" className="mt-1" />
-              </span>
+              <ArrowRight aria-hidden size={11} weight="bold" className="mt-1 shrink-0 text-foreground" />
               {n}
             </li>
           ))}
@@ -514,18 +516,23 @@ function ProposalView({
         <button
           onClick={onApprove}
           disabled={!canProvision || chosen === 0}
-          className="press group inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-ink shadow-[0_6px_18px_-8px_rgba(207,58,38,0.7)] enabled:hover:bg-[#bb3220] disabled:cursor-not-allowed disabled:opacity-45"
+          className="press btn-ink group inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
         >
           {dryRun ? "Approve & simulate (dry run)" : `Approve ${chosen} plan${chosen === 1 ? "" : "s"} & create in PayPal`}
-          <ArrowRight aria-hidden size={16} weight="bold" className="transition-transform duration-200 group-enabled:group-hover:translate-x-0.5" />
+          <ArrowRight
+            aria-hidden
+            size={15}
+            weight="bold"
+            className="transition-transform duration-200 group-enabled:group-hover:translate-x-0.5"
+          />
         </button>
-        <button onClick={onCancel} className="press rounded-xl px-4 py-3 text-sm font-medium text-muted hover:text-foreground">
+        <button onClick={onCancel} className="press rounded-lg px-4 py-2.5 text-sm font-medium text-muted hover:text-foreground">
           Cancel
         </button>
         {!canProvision && <span className="text-xs text-muted">Connect a PayPal sandbox app to create these plans.</span>}
       </div>
-      <p className="mt-3 flex items-start gap-1.5 text-xs leading-5 text-muted">
-        <ShieldCheck aria-hidden size={14} weight="duotone" className="mt-0.5 shrink-0 text-grade-excellent" />
+      <p className="mt-4 flex items-start gap-1.5 text-xs leading-5 text-muted">
+        <ShieldCheck aria-hidden size={14} weight="bold" className="mt-0.5 shrink-0 text-grade-excellent" />
         Guardrail: the agent can only create exactly what you approve. Any call with a different price is blocked
         before it reaches PayPal.
       </p>
@@ -604,11 +611,11 @@ function Ledger({
   const firstOpen = rows.findIndex((r) => !r.step);
 
   return (
-    <div role="status" aria-live="polite" className="rounded-xl border border-(--border-strong) bg-background/50">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-(--border) px-4 py-3">
+    <div role="status" aria-live="polite" className="overflow-hidden rounded-lg border border-(--border-strong) bg-surface">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-(--border) bg-background/70 px-4 py-2.5">
         <h3 className="flex items-center gap-2 text-sm font-semibold">
           {running ? (
-            <span className="live-ring h-2 w-2 rounded-full bg-accent" />
+            <span aria-hidden className="live-dot h-2 w-2 rounded-full bg-grade-excellent" />
           ) : (
             <CheckCircle aria-hidden size={16} weight="fill" className="text-grade-excellent" />
           )}
@@ -624,25 +631,30 @@ function Ledger({
         {rows.map(({ planned, step }, i) => {
           const state = step ? "done" : running && i === firstOpen ? "now" : running ? "queued" : "missing";
           return (
-            <li key={`${planned.tool}-${planned.name}-${i}`} className="grid grid-cols-[1.25rem_1fr] gap-3 px-4 py-3 sm:grid-cols-[1.25rem_1fr_auto] sm:items-center">
+            <li
+              key={`${planned.tool}-${planned.name}-${i}`}
+              className={`grid grid-cols-[1.25rem_1fr] gap-x-3 gap-y-1 px-4 py-3 sm:grid-cols-[1.25rem_1fr_auto] sm:items-center ${
+                state === "done" && running ? "row-in" : ""
+              }`}
+            >
               <span className="mt-0.5 grid h-5 w-5 place-items-center sm:mt-0">
                 {state === "done" ? (
-                  <CheckCircle aria-hidden size={20} weight="fill" className="ink-in text-grade-excellent" />
+                  <CheckCircle aria-hidden size={19} weight="fill" className="text-grade-excellent" />
                 ) : state === "now" ? (
-                  <span className="h-4 w-4 animate-spin-slow rounded-full border-2 border-accent border-t-transparent" />
+                  <CircleNotch aria-hidden size={17} weight="bold" className="animate-spin-slow" />
                 ) : state === "missing" ? (
-                  <XCircle aria-hidden size={20} weight="fill" className="text-grade-poor" />
+                  <XCircle aria-hidden size={19} weight="fill" className="text-grade-poor" />
                 ) : (
                   <span className="h-3.5 w-3.5 rounded-full border border-dashed border-(--border-strong)" />
                 )}
               </span>
-              <div className={`min-w-0 ${state === "queued" ? "opacity-55" : ""}`}>
+              <div className={`min-w-0 ${state === "queued" ? "opacity-50" : ""}`}>
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                   <code className="font-mono text-[13px] font-semibold">{planned.tool}</code>
                   {step && (
                     <span
-                      className={`ink-in rounded-md px-1.5 py-px text-[11px] font-medium ${
-                        step.by === "agent" ? "bg-accent/10 text-accent" : "bg-surface-2 text-muted"
+                      className={`rounded-[5px] px-1.5 py-px font-mono text-[10.5px] font-medium ${
+                        step.by === "agent" ? "bg-mark text-foreground" : "bg-surface-2 text-muted"
                       }`}
                     >
                       {step.by === "agent" ? "AI agent" : "Rule engine"}
@@ -653,11 +665,11 @@ function Ledger({
               </div>
               <div className="col-start-2 min-w-0 sm:col-start-3 sm:text-right">
                 {step ? (
-                  <code className="ink-in block truncate font-mono text-xs text-foreground/80" title={step.resultId}>
+                  <code className="block truncate font-mono text-xs text-foreground/80" title={step.resultId}>
                     {step.resultId}
                   </code>
                 ) : state === "now" ? (
-                  <span className="font-mono text-xs text-accent">calling PayPal…</span>
+                  <span className="font-mono text-xs">calling PayPal…</span>
                 ) : state === "queued" ? (
                   <span className="font-mono text-xs text-muted">queued</span>
                 ) : (
@@ -668,8 +680,13 @@ function Ledger({
           );
         })}
         {extras.map((s, i) => (
-          <li key={`extra-${i}`} className="grid grid-cols-[1.25rem_1fr] gap-3 bg-grade-mixed/6 px-4 py-2.5">
-            <WarningCircle aria-hidden size={20} weight="fill" className={s.status === "rejected" ? "text-grade-mixed" : "text-grade-poor"} />
+          <li key={`extra-${i}`} className="grid grid-cols-[1.25rem_1fr] gap-3 bg-grade-mixed/5 px-4 py-2.5">
+            <WarningCircle
+              aria-hidden
+              size={19}
+              weight="fill"
+              className={s.status === "rejected" ? "text-grade-mixed" : "text-grade-poor"}
+            />
             <div className="min-w-0 text-xs">
               <span className="font-mono font-semibold">{s.tool}</span>{" "}
               <span className="font-medium">{s.status === "rejected" ? "blocked by the guard" : "failed"}</span>
@@ -712,7 +729,7 @@ function FitFrame({ src, title }: { src: string; title: string }) {
   const scaled = width >= 480 && width < BASE_WIDTH;
   const scale = scaled ? width / BASE_WIDTH : 1;
   return (
-    <div ref={wrap} className="relative overflow-hidden rounded-xl border border-(--border-strong) bg-white" style={{ height: contentHeight * scale }}>
+    <div ref={wrap} className="relative overflow-hidden bg-white" style={{ height: contentHeight * scale }}>
       <iframe
         title={title}
         src={src}
@@ -744,17 +761,18 @@ function ProvisionedView({
   const byAgent = okCalls.filter((s) => s.by === "agent").length;
   const previewSrc = `/preview?t=${encodeURIComponent(done.previewToken)}`;
   return (
-    <div className="animate-fade-up mt-6">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="animate-fade-up mt-8">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <span
-          className={`animate-stamp inline-flex -rotate-2 items-center gap-1.5 rounded-md border-2 px-2.5 py-1 font-mono text-xs font-bold uppercase tracking-[0.12em] ${
-            r.complete ? "border-grade-excellent text-grade-excellent" : "border-grade-mixed text-grade-mixed"
+          className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold ${
+            r.complete ? "bg-grade-excellent/10 text-grade-excellent" : "bg-grade-mixed/10 text-grade-mixed"
           }`}
         >
+          {r.complete ? <CheckCircle aria-hidden size={14} weight="fill" /> : <WarningCircle aria-hidden size={14} weight="fill" />}
           {r.complete ? "Live in PayPal sandbox" : "Partially provisioned"}
           {r.simulated ? ", simulated" : ""}
         </span>
-        <p className="font-serif text-lg">{r.summary}</p>
+        <p className="font-display text-lg font-bold">{r.summary}</p>
       </div>
       {r.agentError && byAgent < okCalls.length && (
         <p className="mt-2 text-xs leading-5 text-muted">
@@ -762,49 +780,56 @@ function ProvisionedView({
         </p>
       )}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[0.78fr_1.22fr]">
-        <FoundPricing result={result} title="Before: what buyers saw" annotate />
+      <div className="mt-6 grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-6">
+        <FoundPricing result={result} title="Before: what buyers saw" />
         <div>
-          <div className="flex items-baseline justify-between gap-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="text-sm font-semibold">After: the same pricing, with PayPal</h3>
             <a
               href={previewSrc}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded text-xs font-medium text-accent hover:underline"
+              className="link-mark inline-flex items-center gap-1 rounded-sm text-xs font-medium underline decoration-(--border-strong) underline-offset-4 hover:decoration-foreground"
             >
-              Open the live checkout in a new tab
+              Open in a new tab
               <ArrowSquareOut aria-hidden size={13} weight="bold" />
             </a>
           </div>
-          <div className="relative mt-2">
+          <div className="mt-2 overflow-hidden rounded-lg border border-foreground/25 shadow-[0_18px_40px_-28px_rgba(14,17,23,0.45)]">
+            <div className="flex items-center gap-1.5 border-b border-(--border) bg-surface-2/60 px-3 py-2">
+              <span aria-hidden className="h-2 w-2 rounded-full bg-foreground/15" />
+              <span aria-hidden className="h-2 w-2 rounded-full bg-foreground/15" />
+              <span className="ml-2 font-mono text-[11px] text-muted">Live checkout preview</span>
+              <span className="ml-auto inline-flex items-center gap-1 font-mono text-[11px] text-grade-excellent">
+                <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-grade-excellent" />
+                sandbox
+              </span>
+            </div>
             <FitFrame src={previewSrc} title="Pricing preview with PayPal buttons" />
-            <span
-              aria-hidden
-              className="animate-stamp pointer-events-none absolute -top-3 -right-2 grid h-16 w-16 place-items-center rounded-full border-[3px] border-grade-excellent bg-surface/95 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-grade-excellent shadow-sm"
-              style={{ animationDelay: "350ms" }}
-            >
-              Live
-            </span>
           </div>
         </div>
       </div>
 
-      <div className="mt-8">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold">Drop-in code for your site (PayPal JS SDK v6)</h3>
-          <button
-            onClick={onCopy}
-            aria-live="polite"
-            className="press inline-flex items-center gap-1.5 rounded-lg border border-(--border-strong) px-3 py-1.5 text-xs font-medium hover:border-accent hover:text-accent"
-          >
-            {copied ? <Check aria-hidden size={13} weight="bold" /> : <Copy aria-hidden size={13} />}
-            {copied ? "Copied" : "Copy code"}
-          </button>
+      <div className="mt-10">
+        <div className="overflow-hidden rounded-lg border border-foreground bg-[#11141b]">
+          <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-2.5">
+            <h3 className="text-sm font-medium text-[#e9ebf0]">
+              Drop-in code for your site
+              <span className="ml-2 font-mono text-xs font-normal text-[#9097a6]">PayPal JS SDK v6</span>
+            </h3>
+            <button
+              onClick={onCopy}
+              aria-live="polite"
+              className="press inline-flex items-center gap-1.5 rounded-md border border-white/15 px-2.5 py-1 text-xs font-medium text-[#e9ebf0] hover:border-white/35 hover:bg-white/5 focus-visible:outline-white"
+            >
+              {copied ? <Check aria-hidden size={13} weight="bold" /> : <Copy aria-hidden size={13} />}
+              {copied ? "Copied" : "Copy code"}
+            </button>
+          </div>
+          <pre className="max-h-72 overflow-auto p-4 font-mono text-[12.5px] leading-5 text-[#d5d9e2]">
+            {done.snippet}
+          </pre>
         </div>
-        <pre className="mt-2 max-h-72 overflow-auto rounded-xl border border-(--border) bg-foreground p-4 font-mono text-[12px] leading-5 text-background">
-          {done.snippet}
-        </pre>
       </div>
 
       <FixInvoice result={result} />
@@ -842,57 +867,61 @@ function FixInvoice({ result }: { result: AnalysisResult }) {
   }
 
   return (
-    <div className="mt-8 grid gap-4 rounded-xl border border-(--border) bg-background/60 p-5 sm:grid-cols-[auto_1fr]">
-      <span className="grid h-10 w-10 place-items-center rounded-lg bg-surface-2 text-accent">
-        <Receipt aria-hidden size={20} weight="duotone" />
-      </span>
+    <div className="mt-8 grid gap-5 border-t border-(--border) pt-8 md:grid-cols-[1fr_1.1fr] md:gap-10">
+      <div className="flex gap-3.5">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-surface-2">
+          <Receipt aria-hidden size={18} weight="bold" />
+        </span>
+        <div>
+          <h3 className="font-display text-lg font-bold">Hiring someone for the copy fixes?</h3>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            The agent scopes your top {fixes.length} fixes into a <span className="font-semibold text-foreground">draft</span>{" "}
+            PayPal invoice (2 hours each) with the toolkit&apos;s <code className="font-mono text-[13px]">create_invoice</code>.
+            Nothing is sent.
+          </p>
+        </div>
+      </div>
       <div>
-        <h3 className="text-sm font-semibold">Hiring someone for the copy fixes?</h3>
-        <p className="mt-1 text-xs leading-5 text-muted">
-          The agent scopes your top {fixes.length} fixes into a <span className="font-semibold">draft</span> PayPal
-          invoice (2 hours each) with the toolkit&apos;s <code className="font-mono">create_invoice</code>. Nothing is
-          sent.
-        </p>
         {state.kind === "ok" ? (
-          <p role="status" className="mt-3 flex items-center gap-1.5 text-xs text-grade-excellent">
-            <CheckCircle aria-hidden size={15} weight="fill" />
+          <p role="status" className="flex items-center gap-1.5 text-sm text-grade-excellent md:mt-7">
+            <CheckCircle aria-hidden size={16} weight="fill" />
             Draft invoice <code className="font-mono">{state.id}</code> created in the PayPal sandbox.
           </p>
         ) : state.kind === "soon" ? (
-          <p className="mt-3 text-xs text-muted">Invoice drafts are coming soon for this PayPal app.</p>
+          <p className="text-sm text-muted md:mt-7">Invoice drafts are coming soon for this PayPal app.</p>
         ) : (
-          <form onSubmit={send} className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <label htmlFor="invoice-email" className="sr-only">
-              Invoice recipient email
+          <form onSubmit={send}>
+            <label htmlFor="invoice-email" className="text-sm font-medium">
+              Client email
             </label>
-            <input
-              id="invoice-email"
-              type="email"
-              name="email"
-              required
-              autoComplete="email"
-              spellCheck={false}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="client@example.com…"
-              aria-label="Invoice recipient email"
-              aria-invalid={state.kind === "error"}
-              className="min-w-0 flex-1 rounded-lg border border-(--border-strong) bg-surface px-3 py-2.5 text-sm placeholder:text-muted focus-visible:border-accent focus-visible:ring-4 focus-visible:ring-accent/15"
-            />
-            <button
-              type="submit"
-              disabled={state.kind === "busy"}
-              className="press inline-flex items-center justify-center gap-2 rounded-lg border border-accent px-4 py-2.5 text-sm font-semibold text-accent hover:bg-accent/6 disabled:opacity-50"
-            >
-              {state.kind === "busy" && (
-                <span className="h-3.5 w-3.5 animate-spin-slow rounded-full border-2 border-accent border-t-transparent" />
-              )}
-              {state.kind === "busy" ? "Drafting…" : "Draft PayPal invoice"}
-            </button>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+              <input
+                id="invoice-email"
+                type="email"
+                name="email"
+                required
+                autoComplete="email"
+                spellCheck={false}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="client@example.com"
+                aria-invalid={state.kind === "error"}
+                aria-describedby={state.kind === "error" ? "invoice-error" : undefined}
+                className="min-w-0 flex-1 rounded-lg border border-(--border-strong) bg-surface px-3 py-2.5 text-sm placeholder:text-muted/80 focus-visible:border-foreground/60 focus-visible:ring-4 focus-visible:ring-foreground/8"
+              />
+              <button
+                type="submit"
+                disabled={state.kind === "busy"}
+                className="press inline-flex items-center justify-center gap-2 rounded-lg border border-foreground/80 bg-surface px-4 py-2.5 text-sm font-semibold hover:bg-background disabled:opacity-50"
+              >
+                {state.kind === "busy" && <CircleNotch aria-hidden size={14} weight="bold" className="animate-spin-slow" />}
+                {state.kind === "busy" ? "Drafting…" : "Draft PayPal invoice"}
+              </button>
+            </div>
           </form>
         )}
         {state.kind === "error" && (
-          <p role="alert" className="mt-2 text-xs text-grade-poor">
+          <p id="invoice-error" role="alert" className="mt-2 text-xs text-grade-poor">
             {state.text}
           </p>
         )}
@@ -901,18 +930,20 @@ function FixInvoice({ result }: { result: AnalysisResult }) {
   );
 }
 
-function SandboxBanner({ status }: { status: PayPalStatus | null }) {
-  if (!status) return null;
-  if (status.configured && !status.dryRun) {
-    return (
-      <p className="mb-5 inline-flex items-center gap-2 rounded-md bg-grade-excellent/10 px-2.5 py-1 text-xs font-medium text-grade-excellent">
-        <CheckCircle aria-hidden size={14} weight="fill" />
-        Connected to the PayPal sandbox{status.agentLLM ? ", AI agent on" : ", rule engine"}
-      </p>
-    );
-  }
+function SandboxStatus({ status }: { status: PayPalStatus | null }) {
+  if (!status || !status.configured || status.dryRun) return null;
   return (
-    <div className="mb-5 rounded-lg border border-grade-mixed/50 bg-grade-mixed/10 px-4 py-3 text-sm text-foreground/85">
+    <p className="inline-flex items-center gap-1.5 text-xs text-muted">
+      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-grade-excellent" />
+      Connected to the PayPal sandbox{status.agentLLM ? ", AI agent on" : ", rule engine"}
+    </p>
+  );
+}
+
+function SandboxWarning({ status }: { status: PayPalStatus | null }) {
+  if (!status || (status.configured && !status.dryRun)) return null;
+  return (
+    <div className="mb-6 rounded-lg border border-grade-mixed/40 bg-grade-mixed/5 px-4 py-3 text-sm text-foreground/85">
       <span className="font-semibold text-grade-mixed">
         {status.dryRun ? "Dry run: PayPal responses are simulated." : "PayPal sandbox not configured."}
       </span>{" "}

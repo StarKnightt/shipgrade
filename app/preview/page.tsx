@@ -19,13 +19,13 @@ export default async function PreviewPage({
 
   if (!payload || payload.kind !== "preview") {
     return (
-      <main className="grid min-h-screen place-items-center p-8 text-center">
+      <main className="grid min-h-dvh place-items-center p-8 text-center">
         <div>
-          <h1 className="font-serif text-2xl font-semibold">This preview link has expired.</h1>
+          <h1 className="font-display text-2xl font-bold">This preview link has expired.</h1>
           <p className="mt-2 text-sm text-muted">Run the checkout agent again from your Shipgrade report.</p>
           <Link
             href="/"
-            className="press mt-5 inline-block rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink"
+            className="press btn-ink mt-5 inline-block rounded-lg px-5 py-2.5 text-sm font-semibold"
           >
             Back to Shipgrade
           </Link>

@@ -101,7 +101,7 @@ export default function PayPalButton({
 
   if (disabled) {
     return (
-      <div className="flex h-11 items-center justify-center gap-2 rounded-lg border border-dashed border-(--border-strong) bg-surface-2/60 px-3 text-center font-mono text-[11px] uppercase tracking-[0.12em] text-muted">
+      <div className="flex h-11 items-center justify-center gap-2 rounded-lg border border-dashed border-(--border-strong) bg-surface-2/60 px-3 text-center font-mono text-xs text-muted">
         <PayPalMark />
         {disabled}
       </div>
@@ -110,9 +110,9 @@ export default function PayPalButton({
 
   return (
     <div>
-      <div ref={host} className="min-h-11 [&_paypal-button]:block [&_paypal-button]:w-full" />
+      <div ref={host} className={`${state === "ready" ? "min-h-11" : ""} [&_paypal-button]:block [&_paypal-button]:w-full`} />
       {state === "loading" && (
-        <div className="h-11 animate-pulse rounded-lg bg-surface-2" aria-label="Loading PayPal" />
+        <div className="skeleton h-11 rounded-lg" role="status" aria-label="Loading PayPal" />
       )}
       {state === "ineligible" && (
         <p className="text-xs text-muted">PayPal isn&apos;t available for this browser or region.</p>

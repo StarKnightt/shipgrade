@@ -7,6 +7,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
+  CircleNotch,
   CreditCard,
   CursorClick,
   Eye,
@@ -14,6 +15,7 @@ import {
   PenNib,
   ShieldCheck,
   UsersThree,
+  WarningCircle,
   type Icon,
 } from "@phosphor-icons/react";
 import type { AnalysisResult, DimensionKey, DimensionResult, Finding } from "@/lib/analyze";
@@ -35,9 +37,21 @@ const LOADING_STEPS = [
 ];
 
 const HOW_IT_WORKS = [
-  ["Grade", "Seven scores, including whether a ready buyer can actually pay."],
-  ["Approve", "An AI agent drafts your PayPal catalog. Nothing is created until you say so."],
-  ["Live checkout", "Real sandbox plans, working PayPal buttons, and drop-in v6 code."],
+  {
+    title: "Grade",
+    detail: "Seven scores, starting with whether a ready buyer can actually pay.",
+    output: "Report card + checkout grade",
+  },
+  {
+    title: "Approve",
+    detail: "An AI agent drafts your PayPal catalog. Nothing is created until you say so.",
+    output: "Products and plans, at your prices",
+  },
+  {
+    title: "Go live",
+    detail: "Real sandbox plans, working PayPal buttons, and code you can paste in.",
+    output: "PayPal JS SDK v6 snippet",
+  },
 ] as const;
 
 const DIMENSION_ICON: Record<DimensionKey, Icon> = {
@@ -59,6 +73,15 @@ const SHORT_LABEL: Record<DimensionKey, string> = {
   craft: "Craft",
   monetization: "Checkout",
 };
+
+/** Letter bands on the 0-100 rule, matching gradeFromScore in lib/analyze. */
+const BANDS = [
+  { letter: "F", from: 0, to: 40 },
+  { letter: "D", from: 40, to: 50 },
+  { letter: "C", from: 50, to: 65 },
+  { letter: "B", from: 65, to: 80 },
+  { letter: "A", from: 80, to: 100 },
+] as const;
 
 type Status = "idle" | "loading" | "done" | "error";
 
@@ -264,139 +287,139 @@ export default function Shipgrade() {
   const showHero = status === "idle" || status === "error";
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-5 pt-8 pb-20 sm:pt-12 sm:pb-28">
+    <div className="mx-auto w-full max-w-6xl px-5 pt-10 pb-20 sm:pt-16 sm:pb-28">
       {showHero && (
         <>
-          <section className="grid items-center gap-10 lg:grid-cols-[1.02fr_1fr] lg:gap-14">
-            <div className="text-center lg:text-left">
-              <p className="rise font-mono text-[11px] uppercase tracking-[0.18em] text-accent" style={{ "--i": 0 } as React.CSSProperties}>
+          <section className="grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-14">
+            <div>
+              <p className="rise font-mono text-xs text-muted" style={{ "--i": 0 } as React.CSSProperties}>
                 Product critique + PayPal checkout agent
               </p>
               <h1
-                className="rise mt-4 pb-1 font-serif text-[2.6rem] font-semibold leading-[1.04] tracking-tight text-balance sm:text-6xl lg:text-[4.1rem]"
+                className="rise font-display mt-4 pb-1 text-[2.75rem] font-extrabold leading-[1.02] text-balance sm:text-6xl lg:text-[4.25rem]"
                 style={{ "--i": 1 } as React.CSSProperties}
               >
-                Grade your page.{" "}
-                <span className="block italic text-accent">Then ship the checkout.</span>
+                Grade your page.
+                <br />
+                Then ship the <span className="mark">checkout.</span>
               </h1>
               <p
-                className="rise mx-auto mt-5 max-w-xl text-pretty text-base leading-7 text-muted sm:text-lg lg:mx-0"
+                className="rise mt-5 max-w-[30rem] text-pretty text-[1.0625rem] leading-7 text-muted"
                 style={{ "--i": 2 } as React.CSSProperties}
               >
-                Shipgrade critiques your landing page in seconds. Then a PayPal agent turns your prices into a live
-                checkout you approve.
+                Seven scores for your landing page. Then a PayPal agent turns your prices into a live checkout you
+                approve.
               </p>
 
               <form
                 onSubmit={onSubmit}
                 noValidate
-                className="rise mx-auto mt-7 flex max-w-xl flex-col gap-3 sm:flex-row lg:mx-0"
+                className="rise mt-8 max-w-[32rem]"
                 style={{ "--i": 3 } as React.CSSProperties}
               >
-                <label htmlFor="grade-url" className="sr-only">
-                  Product URL to grade
+                <label htmlFor="grade-url" className="text-sm font-medium">
+                  Your product URL
                 </label>
-                <div className="flex flex-1 items-center gap-2 rounded-xl border border-(--border-strong) bg-surface px-4 shadow-[0_1px_0_rgba(33,28,21,0.04)] transition-[border-color,box-shadow] duration-200 focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/15">
-                  <span className="select-none font-mono text-sm text-muted">https://</span>
-                  <input
-                    id="grade-url"
-                    ref={inputRef}
-                    name="url"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    type="text"
-                    inputMode="url"
-                    autoComplete="url"
-                    autoCapitalize="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    aria-label="Product URL to grade"
-                    aria-invalid={status === "error"}
-                    aria-describedby={status === "error" ? "grade-error" : undefined}
-                    placeholder="yourproduct.com…"
-                    className="h-14 w-full min-w-0 bg-transparent py-3.5 text-base text-foreground outline-none placeholder:text-muted"
-                  />
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                  <div
+                    className={`flex flex-1 items-center gap-1.5 rounded-lg border bg-surface px-3.5 shadow-[0_1px_2px_rgba(14,17,23,0.05)] transition-[border-color,box-shadow] duration-150 focus-within:border-foreground/60 focus-within:ring-4 focus-within:ring-foreground/8 ${
+                      status === "error" ? "border-grade-poor/60" : "border-(--border-strong)"
+                    }`}
+                  >
+                    <span className="select-none font-mono text-sm text-muted">https://</span>
+                    <input
+                      id="grade-url"
+                      ref={inputRef}
+                      name="url"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      type="text"
+                      inputMode="url"
+                      autoComplete="url"
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      aria-invalid={status === "error"}
+                      aria-describedby={status === "error" ? "grade-error" : undefined}
+                      placeholder="yourproduct.com"
+                      className="h-12 w-full min-w-0 bg-transparent text-base text-foreground outline-none placeholder:text-muted/80"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="press btn-ink group flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg px-5 text-[0.9375rem] font-semibold"
+                  >
+                    Grade it
+                    <ArrowRight
+                      aria-hidden
+                      size={16}
+                      weight="bold"
+                      className="transition-transform duration-200 group-hover:translate-x-0.5"
+                    />
+                  </button>
                 </div>
-                <button
-                  type="submit"
-                  className="press group flex h-14 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-base font-semibold text-accent-ink shadow-[0_6px_18px_-8px_rgba(207,58,38,0.7)] hover:bg-[#bb3220]"
-                >
-                  Grade it
-                  <ArrowRight aria-hidden size={18} weight="bold" className="transition-transform duration-200 group-hover:translate-x-0.5" />
-                </button>
+                {status === "error" && (
+                  <p id="grade-error" role="alert" className="mt-2.5 flex items-start gap-1.5 text-sm text-grade-poor">
+                    <WarningCircle aria-hidden size={17} weight="fill" className="mt-px shrink-0" />
+                    {error}
+                  </p>
+                )}
               </form>
 
-              {status === "error" && (
-                <p
-                  id="grade-error"
-                  role="alert"
-                  className="mx-auto mt-3 max-w-xl rounded-lg border border-grade-poor/40 bg-grade-poor/8 px-4 py-2.5 text-left text-sm text-grade-poor lg:mx-0"
-                >
-                  {error}
-                </p>
-              )}
-
-              <div className="rise mt-5 flex justify-center lg:justify-start" style={{ "--i": 4 } as React.CSSProperties}>
+              <div className="rise mt-5" style={{ "--i": 4 } as React.CSSProperties}>
                 <button
                   type="button"
                   onClick={runDemo}
-                  className="press group inline-flex items-center gap-2 rounded-lg px-1 py-1.5 text-sm font-medium text-foreground underline decoration-accent/50 decoration-2 underline-offset-[5px] hover:decoration-accent"
+                  className="press link-mark group -mx-1 inline-flex items-center gap-1.5 rounded-md px-1 py-1 text-sm font-medium underline decoration-(--border-strong) decoration-1 underline-offset-[5px] hover:decoration-foreground"
                 >
-                  Or watch the full run on {DEMO_SITE}
-                  <ArrowRight aria-hidden size={15} weight="bold" className="text-accent transition-transform duration-200 group-hover:translate-x-0.5" />
+                  Or watch a full run on {DEMO_SITE}
+                  <ArrowRight
+                    aria-hidden
+                    size={14}
+                    weight="bold"
+                    className="transition-transform duration-200 group-hover:translate-x-0.5"
+                  />
                 </button>
               </div>
             </div>
 
-            <figure className="rise relative mx-auto w-full max-w-xl lg:max-w-none" style={{ "--i": 3 } as React.CSSProperties}>
-              <div className="relative rotate-[0.6deg] overflow-hidden rounded-2xl border border-(--border-strong) bg-surface p-1.5 shadow-[0_30px_60px_-30px_rgba(60,40,20,0.45),0_2px_0_rgba(33,28,21,0.04)]">
+            <figure className="rise w-full" style={{ "--i": 3 } as React.CSSProperties}>
+              <div className="overflow-hidden rounded-xl border border-(--border-strong) bg-surface p-1 shadow-[0_24px_48px_-28px_rgba(14,17,23,0.35)]">
                 <Image
                   src="/hero-agent.png"
                   alt="A real Shipgrade run on linear.app: the PayPal agent's tool calls with sandbox IDs, next to the live pricing page with PayPal buttons."
                   width={1656}
                   height={1242}
                   priority
-                  sizes="(min-width: 1024px) 560px, 100vw"
-                  className="h-auto w-full rounded-xl"
+                  sizes="(min-width: 1024px) 600px, 100vw"
+                  className="h-auto w-full rounded-[9px]"
                 />
               </div>
-              <span
-                aria-hidden
-                className="animate-stamp absolute -right-2 bottom-4 grid h-20 w-20 place-items-center rounded-full border-[3px] border-grade-excellent bg-surface/90 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-grade-excellent shadow-sm sm:-right-6"
-                style={{ animationDelay: "500ms" }}
-              >
-                Live
-              </span>
-              <figcaption className="mt-3 text-center text-xs leading-5 text-muted lg:text-left">
-                A real run on linear.app: the agent&apos;s PayPal calls, then the live checkout it built.
+              <figcaption className="mt-3 text-xs leading-5 text-muted">
+                A real run on linear.app: the agent&apos;s PayPal calls, then the checkout it built.
               </figcaption>
             </figure>
           </section>
 
-          <section aria-labelledby="how" className="mt-16 border-t border-(--border) pt-10 sm:mt-20">
-            <h2 id="how" className="font-serif text-2xl font-semibold tracking-tight">
-              How it works
-            </h2>
-            <ol className="mt-6 grid gap-6 md:grid-cols-3 md:gap-0">
-              {HOW_IT_WORKS.map(([title, detail], i) => (
-                <li key={title} className="relative md:pr-8">
-                  {i < HOW_IT_WORKS.length - 1 && (
-                    <span aria-hidden className="absolute top-4 left-10 hidden h-px w-[calc(100%-3rem)] bg-(--border-strong) md:block" />
-                  )}
-                  <div className="flex items-center gap-3 md:block">
-                    <span className="relative grid h-8 w-8 shrink-0 place-items-center rounded-full border-2 border-accent bg-background font-mono text-xs font-bold text-accent">
-                      {i + 1}
-                    </span>
-                    <h3 className="text-base font-semibold md:mt-4">{title}</h3>
-                  </div>
-                  <p className="mt-1.5 max-w-xs text-sm leading-6 text-muted">{detail}</p>
+          <section aria-labelledby="how" className="mt-20 sm:mt-24">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+              <h2 id="how" className="font-display text-2xl font-bold">
+                How it works
+              </h2>
+              <p className="text-sm text-muted">Any public URL. No sign-up.</p>
+            </div>
+            <ol className="mt-5 grid gap-px overflow-hidden rounded-xl border border-(--border) bg-(--border) md:grid-cols-3">
+              {HOW_IT_WORKS.map((s, i) => (
+                <li key={s.title} className="flex flex-col bg-surface p-5 sm:p-6">
+                  <span className="font-mono text-xs text-muted">Step {i + 1}</span>
+                  <h3 className="font-display mt-2 text-xl font-bold">{s.title}</h3>
+                  <p className="mt-1.5 max-w-xs flex-1 text-sm leading-6 text-muted">{s.detail}</p>
+                  <p className="mt-5 border-t border-dashed border-(--border-strong) pt-3 font-mono text-xs text-foreground/80">
+                    {s.output}
+                  </p>
                 </li>
               ))}
             </ol>
-            <p className="mt-10 text-sm leading-6 text-muted">
-              Seven grades: value proposition, audience, differentiation, call to action, trust, craft, and the new
-              checkout grade. No sign-up, any public URL.
-            </p>
           </section>
         </>
       )}
@@ -421,40 +444,43 @@ export default function Shipgrade() {
 function LoadingState({ step, url }: { step: number; url: string }) {
   return (
     <section aria-live="polite" aria-busy="true" className="animate-fade-up">
-      <div className="overflow-hidden rounded-2xl border border-(--border-strong) bg-surface shadow-sm">
-        <div className="grid gap-8 p-6 sm:grid-cols-[auto_1fr] sm:p-9">
-          <div className="mx-auto grid h-32 w-32 place-items-center rounded-full border-[3px] border-dashed border-(--border-strong)">
-            <span className="tabular font-mono text-sm font-bold text-accent">
-              {step + 1}/{LOADING_STEPS.length}
-            </span>
-          </div>
-          <div>
-            <p className="font-mono text-xs text-muted">Grading {hostOf(url || "your page")}</p>
-            <div className="mt-3 space-y-2.5">
-              <div className="skeleton h-7 w-11/12" />
-              <div className="skeleton h-7 w-3/4" />
-              <div className="skeleton h-4 w-1/2" />
-            </div>
+      <div className="overflow-hidden rounded-xl border border-(--border-strong) bg-surface">
+        <div className="flex items-center justify-between gap-3 border-b border-(--border) px-5 py-3 sm:px-8">
+          <p className="text-sm">
+            <span className="text-muted">Grading</span>{" "}
+            <span className="font-medium">{hostOf(url || "your page")}</span>
+          </p>
+          <span className="tabular font-mono text-xs text-muted">
+            {step + 1}/{LOADING_STEPS.length}
+          </span>
+        </div>
+        <div className="grid gap-8 p-5 sm:grid-cols-[8.5rem_1fr] sm:p-8">
+          <div className="skeleton h-28 w-28 sm:h-32 sm:w-32" />
+          <div className="space-y-3 pt-1">
+            <div className="skeleton h-7 w-11/12" />
+            <div className="skeleton h-7 w-3/5" />
+            <div className="skeleton mt-5 h-4 w-2/5" />
           </div>
         </div>
-        <ol className="grid gap-x-6 gap-y-2 border-t border-(--border) px-6 py-5 text-sm sm:grid-cols-2 sm:px-9 lg:grid-cols-4">
+        <ol className="grid gap-x-8 gap-y-2.5 border-t border-(--border) bg-background/60 px-5 py-5 text-sm sm:grid-cols-2 sm:px-8 lg:grid-cols-4">
           {LOADING_STEPS.map((s, i) => {
             const state = i < step ? "done" : i === step ? "now" : "todo";
             return (
-              <li key={s} className={`flex items-center gap-2 ${state === "todo" ? "text-muted/70" : "text-foreground"}`}>
-                <span
-                  className={`grid h-4 w-4 shrink-0 place-items-center rounded-full ${
-                    state === "done"
-                      ? "bg-grade-excellent text-white"
-                      : state === "now"
-                        ? "live-ring border-2 border-accent"
-                        : "border border-(--border-strong)"
-                  }`}
-                >
-                  {state === "done" && <Check aria-hidden size={10} weight="bold" />}
+              <li
+                key={s}
+                className={`flex items-center gap-2 ${state === "todo" ? "text-muted/70" : "text-foreground"}`}
+              >
+                <span className="grid h-4 w-4 shrink-0 place-items-center">
+                  {state === "done" ? (
+                    <Check aria-hidden size={13} weight="bold" className="text-grade-excellent" />
+                  ) : state === "now" ? (
+                    <CircleNotch aria-hidden size={14} weight="bold" className="animate-spin-slow" />
+                  ) : (
+                    <span className="h-1 w-1 rounded-full bg-current" />
+                  )}
                 </span>
                 {s}
-                {state === "now" ? "…" : ""}
+                <span className="sr-only">{state === "done" ? "(done)" : state === "now" ? "(in progress)" : ""}</span>
               </li>
             );
           })}
@@ -464,21 +490,56 @@ function LoadingState({ step, url }: { step: number; url: string }) {
   );
 }
 
-function GradeSeal({ result }: { result: AnalysisResult }) {
-  const color = bandColor(result.band);
-  const count = useCountUp(result.overallScore, 1100, 220);
+function GradeRule({ score, color }: { score: number; color: string }) {
+  const current = BANDS.find((b) => score >= b.from && score < b.to) ?? BANDS[BANDS.length - 1];
   return (
-    <div className="shrink-0">
-      <div
-        className="animate-stamp relative grid h-32 w-32 place-items-center rounded-full border-[3px]"
-        style={{ borderColor: color }}
-      >
-        <span className="absolute inset-[7px] rounded-full border border-dashed" style={{ borderColor: color, opacity: 0.45 }} />
-        <span className="font-serif text-6xl font-semibold leading-none" style={{ color }}>
-          {result.grade}
-        </span>
+    <div aria-hidden className="mt-9">
+      <div className="relative h-6">
+        <div className="absolute inset-x-0 bottom-0 flex h-1.5 gap-[3px]">
+          {BANDS.map((b) => (
+            <span
+              key={b.letter}
+              className="h-full basis-0 rounded-[2px]"
+              style={{
+                flexGrow: b.to - b.from,
+                background: b === current ? `color-mix(in oklab, ${color} 30%, transparent)` : "var(--surface-2)",
+              }}
+            />
+          ))}
+        </div>
+        <div className="marker-in absolute inset-0" style={{ "--from": `-${score}%` } as React.CSSProperties}>
+          <span
+            className="absolute bottom-[-3px] h-[27px] w-[3px] -translate-x-1/2 rounded-full ring-2 ring-surface"
+            style={{ left: `${score}%`, background: color }}
+          />
+        </div>
       </div>
-      <div className="tabular mt-3 text-center font-mono text-xs text-muted">{count} / 100</div>
+      <div className="relative mt-2.5 h-4 font-mono text-[11px] text-muted">
+        <span className="absolute left-0">0</span>
+        {BANDS.map((b) => (
+          <span
+            key={b.letter}
+            className={`absolute -translate-x-1/2 ${b === current ? "font-semibold text-foreground" : ""}`}
+            style={{ left: `${(b.from + b.to) / 2}%` }}
+          >
+            {b.letter}
+          </span>
+        ))}
+        <span className="absolute right-0">100</span>
+      </div>
+    </div>
+  );
+}
+
+function MiniRule({ score, color }: { score: number; color: string }) {
+  return (
+    <div aria-hidden className="relative mt-3 h-2.5">
+      <div className="ticks absolute inset-x-0 bottom-0 h-1.5 border-r border-(--border-strong)" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-(--border-strong)" />
+      <span
+        className="absolute bottom-0 h-2.5 w-[3px] -translate-x-1/2 rounded-full"
+        style={{ left: `${score}%`, background: color }}
+      />
     </div>
   );
 }
@@ -489,7 +550,10 @@ function ScoreStrip({ dimensions }: { dimensions: DimensionResult[] }) {
     ...dimensions.filter((d) => d.key !== "monetization"),
   ];
   return (
-    <ul className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7" aria-label="Scores by dimension">
+    <ul
+      className="grid grid-cols-2 gap-px border-t border-(--border) bg-(--border) sm:grid-cols-4 lg:grid-cols-7"
+      aria-label="Scores by dimension"
+    >
       {ordered.map((d, i) => (
         <ScoreTile key={d.key} dim={d} index={i} />
       ))}
@@ -499,24 +563,26 @@ function ScoreStrip({ dimensions }: { dimensions: DimensionResult[] }) {
 
 function ScoreTile({ dim, index }: { dim: DimensionResult; index: number }) {
   const color = scoreColor(dim.score);
-  const count = useCountUp(dim.score, 800, 350 + index * 70);
+  const count = useCountUp(dim.score, 800, 300 + index * 60);
   const isCheckout = dim.key === "monetization";
   const IconC = DIMENSION_ICON[dim.key];
   return (
-    <li className="rise" style={{ "--i": index + 2 } as React.CSSProperties}>
+    <li className={`rise ${isCheckout ? "col-span-2 lg:col-span-1" : ""}`} style={{ "--i": index + 2 } as React.CSSProperties}>
       <a
         href={isCheckout ? "#checkout" : `#dim-${dim.key}`}
-        className={`press flex h-full flex-col rounded-xl border px-3 py-2.5 hover:border-accent ${
-          isCheckout ? "border-accent/60 bg-accent/6" : "border-(--border) bg-background/50"
+        className={`group flex h-full flex-col px-4 pt-3.5 pb-4 transition-colors duration-150 hover:bg-background focus-visible:-outline-offset-2 ${
+          isCheckout ? "bg-[color-mix(in_oklab,var(--mark)_16%,var(--surface))]" : "bg-surface"
         }`}
       >
-        <span className="flex items-center gap-1.5 text-xs text-muted">
-          <IconC aria-hidden size={14} weight="duotone" style={{ color }} />
+        <span className="flex items-center gap-1.5 text-xs text-muted group-hover:text-foreground">
+          <IconC aria-hidden size={14} weight="bold" />
           {SHORT_LABEL[dim.key]}
+          <span className="sr-only">: {dim.score} out of 100</span>
         </span>
-        <span className="tabular mt-1 font-mono text-xl font-bold" style={{ color }}>
+        <span aria-hidden className="tabular mt-1.5 font-mono text-2xl font-semibold" style={{ color }}>
           {count}
         </span>
+        <MiniRule score={dim.score} color={color} />
       </a>
     </li>
   );
@@ -541,6 +607,8 @@ function Scorecard({
 }) {
   const checkoutDim = result.dimensions.find((d) => d.key === "monetization");
   const others = result.dimensions.filter((d) => d.key !== "monetization");
+  const color = bandColor(result.band);
+  const count = useCountUp(result.overallScore, 1100, 200);
 
   useEffect(() => {
     if (!demo) return;
@@ -552,48 +620,62 @@ function Scorecard({
 
   return (
     <section className="animate-fade-up" aria-label={`Report card for ${hostOf(result.finalUrl)}`}>
-      <div className="overflow-hidden rounded-2xl border border-(--border-strong) bg-surface shadow-sm">
-        <div className="p-6 sm:p-9">
-          <div className="flex flex-col items-center gap-7 text-center sm:flex-row sm:items-start sm:gap-9 sm:text-left">
-            <GradeSeal result={result} />
-            <div className="flex min-w-0 flex-col">
-              <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm sm:justify-start">
-                <span className="text-muted">Report card for</span>
-                <a
-                  href={result.finalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-0.5 font-medium text-accent hover:underline"
-                >
-                  {hostOf(result.finalUrl)}
-                  <ArrowUpRight aria-hidden size={13} weight="bold" />
-                </a>
+      <div className="overflow-hidden rounded-xl border border-(--border-strong) bg-surface shadow-[0_1px_2px_rgba(14,17,23,0.04)]">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-(--border) px-5 py-3 text-sm sm:px-8">
+          <p className="flex items-center gap-1.5">
+            <span className="text-muted">Report card for</span>
+            <a
+              href={result.finalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link-mark inline-flex items-center gap-0.5 rounded-sm font-medium underline decoration-(--border-strong) underline-offset-4"
+            >
+              {hostOf(result.finalUrl)}
+              <ArrowUpRight aria-hidden size={13} weight="bold" />
+            </a>
+          </p>
+          <p className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-muted">
+            <span>{result.meta.wordCount.toLocaleString()} words</span>
+            <span>{result.meta.headingCount} headings</span>
+            <span className="text-foreground">{result.meta.usedLLM ? "AI-enhanced" : "Heuristic engine"}</span>
+          </p>
+        </div>
+
+        <div className="px-5 pt-7 pb-7 sm:px-8 sm:pt-9">
+          <div className="grid gap-6 sm:grid-cols-[auto_1fr] sm:gap-10">
+            <div className="flex items-end gap-4 sm:block">
+              <div
+                className="font-display text-[6.5rem] leading-[0.82] font-extrabold tracking-[-0.04em] sm:text-[8rem]"
+                style={{ color }}
+              >
+                {result.grade}
               </div>
-              <h1 className="mt-2 text-pretty font-serif text-2xl font-medium leading-snug sm:text-[1.85rem]">
+              <div className="tabular font-mono text-sm text-muted sm:mt-3">
+                <span className="text-foreground">{count}</span> / 100
+              </div>
+            </div>
+            <div className="min-w-0 sm:pt-1">
+              <h1 className="font-display text-pretty text-[1.65rem] leading-[1.15] font-bold sm:text-[2.1rem]">
                 {result.verdict}
               </h1>
               {result.roast && (
-                <p className="mt-4 text-pretty border-l-2 border-accent pl-3.5 font-serif text-base italic leading-7 text-muted">
-                  “{result.roast}”
+                <p className="mt-4 max-w-[60ch] text-pretty border-l-2 border-foreground pl-3.5 text-[0.95rem] leading-7 text-foreground/80">
+                  &ldquo;{result.roast}&rdquo;
                 </p>
               )}
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs text-muted sm:justify-start">
-                <Chip>{result.meta.wordCount.toLocaleString()} words</Chip>
-                <Chip>{result.meta.headingCount} headings</Chip>
-                <Chip accent>{result.meta.usedLLM ? "AI-enhanced" : "Heuristic engine"}</Chip>
-              </div>
             </div>
           </div>
-          <ScoreStrip dimensions={result.dimensions} />
+          <GradeRule score={result.overallScore} color={color} />
         </div>
+        <ScoreStrip dimensions={result.dimensions} />
       </div>
 
       {checkoutDim && <CheckoutCard dim={checkoutDim} checkout={result.checkout} />}
 
       {agent}
 
-      <h2 className="mt-14 font-serif text-2xl font-semibold tracking-tight">The other six grades</h2>
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <h2 className="font-display mt-16 text-2xl font-bold">The other six grades</h2>
+      <div className="mt-4 grid gap-px overflow-hidden rounded-xl border border-(--border) bg-(--border) md:grid-cols-2">
         {others.map((dim, idx) => (
           <DimensionCard key={dim.key} dim={dim} delay={idx * 70} />
         ))}
@@ -601,18 +683,16 @@ function Scorecard({
 
       {upgrade}
 
-      <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        <button
-          onClick={onReset}
-          className="press rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-accent-ink shadow-sm hover:bg-[#bb3220]"
-        >
+      <div className="mt-12 flex flex-col gap-3 border-t border-(--border) pt-8 sm:flex-row sm:items-center">
+        <button onClick={onReset} className="press btn-ink rounded-lg px-5 py-2.5 text-sm font-semibold">
           Grade another page
         </button>
         <button
           onClick={onShare}
           aria-live="polite"
-          className="press rounded-xl border border-(--border-strong) bg-surface px-6 py-3 text-sm font-medium text-foreground hover:border-accent"
+          className="press inline-flex items-center justify-center gap-1.5 rounded-lg border border-(--border-strong) bg-surface px-5 py-2.5 text-sm font-medium hover:border-foreground/40"
         >
+          {copied && <Check aria-hidden size={14} weight="bold" className="text-grade-excellent" />}
           {copied ? "Copied with link" : "Copy result"}
         </button>
       </div>
@@ -620,48 +700,30 @@ function Scorecard({
   );
 }
 
-function Chip({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
+function ScoreHead({ label, score, count, as: H = "h3" }: { label: string; score: number; count: number; as?: "h2" | "h3" }) {
+  const color = scoreColor(score);
   return (
-    <span
-      className={`rounded-full border px-2.5 py-1 font-mono ${accent ? "border-accent text-accent" : "border-(--border-strong)"}`}
-    >
-      {children}
-    </span>
-  );
-}
-
-function ScoreLine({ count, color }: { count: number; color: string }) {
-  return (
-    <div aria-hidden className="mt-3.5 h-[3px] rounded-full transition-[width] duration-500" style={{ width: `${count}%`, background: color }} />
+    <div className="flex items-baseline justify-between gap-3">
+      <H className="font-display text-lg font-bold">{label}</H>
+      <span className="flex items-baseline gap-0.5">
+        <span className="tabular font-mono text-2xl font-semibold" style={{ color }}>
+          {count}
+        </span>
+        <span className="font-mono text-xs text-muted">/100</span>
+      </span>
+    </div>
   );
 }
 
 function DimensionCard({ dim, delay }: { dim: DimensionResult; delay: number }) {
   const color = scoreColor(dim.score);
   const count = useCountUp(dim.score, 850, delay);
-  const IconC = DIMENSION_ICON[dim.key];
   return (
-    <article
-      id={`dim-${dim.key}`}
-      className="scroll-mt-24 rounded-2xl border border-(--border) bg-surface p-5 shadow-sm transition-[border-color] duration-200 hover:border-(--border-strong)"
-    >
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface-2" style={{ color }}>
-            <IconC aria-hidden size={18} weight="duotone" />
-          </span>
-          <h3 className="text-base font-semibold tracking-tight">{dim.label}</h3>
-        </div>
-        <span className="flex items-baseline gap-0.5">
-          <span className="tabular font-mono text-2xl font-bold" style={{ color }}>
-            {count}
-          </span>
-          <span className="font-mono text-[11px] text-muted">/100</span>
-        </span>
-      </div>
-      <p className="mt-2 text-sm leading-6 text-muted">{dim.blurb}</p>
-      <ScoreLine count={count} color={color} />
-      <ul className="mt-4 space-y-2.5">
+    <article id={`dim-${dim.key}`} className="scroll-mt-24 bg-surface p-5 sm:p-6">
+      <ScoreHead label={dim.label} score={dim.score} count={count} />
+      <p className="mt-1 text-sm leading-6 text-muted">{dim.blurb}</p>
+      <MiniRule score={dim.score} color={color} />
+      <ul className="mt-5 space-y-3">
         {dim.findings.map((f, i) => (
           <FindingRow key={i} finding={f} />
         ))}
@@ -688,55 +750,42 @@ function CheckoutCard({ dim, checkout }: { dim: DimensionResult; checkout: Monet
   return (
     <article
       id="checkout"
-      className="animate-fade-up mt-5 scroll-mt-24 overflow-hidden rounded-2xl border border-(--border-strong) bg-surface shadow-sm"
+      className="animate-fade-up mt-6 scroll-mt-20 overflow-hidden rounded-xl border border-(--border-strong) bg-surface"
     >
-      <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[1.1fr_1fr]">
-        <div>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface-2" style={{ color }}>
-                <CreditCard aria-hidden size={18} weight="duotone" />
-              </span>
-              <h2 className="text-base font-semibold tracking-tight">{dim.label}</h2>
-              <span className="rounded-md bg-accent px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-[0.1em] text-accent-ink">
-                New
-              </span>
-            </div>
-            <span className="flex items-baseline gap-0.5">
-              <span className="tabular font-mono text-2xl font-bold" style={{ color }}>
-                {count}
-              </span>
-              <span className="font-mono text-[11px] text-muted">/100</span>
-            </span>
+      <div className="grid lg:grid-cols-[1.15fr_1fr]">
+        <div className="p-5 sm:p-8">
+          <p className="font-mono text-xs text-muted">Graded first</p>
+          <div className="mt-1.5">
+            <ScoreHead label={dim.label} score={dim.score} count={count} as="h2" />
           </div>
-          <p className="mt-2 text-sm leading-6 text-muted">{dim.blurb}</p>
-          <ScoreLine count={count} color={color} />
+          <p className="mt-1 text-sm leading-6 text-muted">{dim.blurb}</p>
+          <MiniRule score={dim.score} color={color} />
 
           {dim.explanation && (
-            <p className="mt-4 text-pretty border-l-2 border-accent pl-3.5 font-serif text-[0.95rem] italic leading-7 text-foreground/85">
-              {dim.explanation}
-              <span className="ml-2 align-middle font-sans text-[11px] not-italic text-muted">
-                {dim.explanationByAI ? "AI explanation" : "Rule engine"}
-              </span>
-            </p>
+            <div className="mt-6 border-l-2 border-foreground pl-4">
+              <p className="text-pretty text-[0.95rem] leading-7 text-foreground/90">{dim.explanation}</p>
+              <p className="mt-1.5 font-mono text-[11px] text-muted">
+                {dim.explanationByAI ? "Explained by AI" : "Rule engine"}
+              </p>
+            </div>
           )}
 
-          <ul className="mt-4 space-y-2.5">
+          <ul className="mt-6 space-y-3">
             {dim.findings.map((f, i) => (
               <FindingRow key={i} finding={f} />
             ))}
           </ul>
         </div>
 
-        <div className="rounded-xl border border-(--border) bg-background/60 p-4">
-          <div className="flex items-baseline justify-between gap-2">
-            <h3 className="text-sm font-semibold">What we found</h3>
+        <div className="border-t border-(--border) bg-background/70 p-5 sm:p-8 lg:border-t-0 lg:border-l">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-sm font-semibold">What buyers see</h3>
             {checkout.pricingSource === "linked" && checkout.pricingUrl && (
               <a
                 href={checkout.pricingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-0.5 font-mono text-[11px] text-accent hover:underline"
+                className="link-mark inline-flex items-center gap-0.5 rounded-sm font-mono text-xs text-muted hover:text-foreground"
               >
                 {hostPath(checkout.pricingUrl)}
                 <ArrowUpRight aria-hidden size={11} weight="bold" />
@@ -744,45 +793,48 @@ function CheckoutCard({ dim, checkout }: { dim: DimensionResult; checkout: Monet
             )}
           </div>
 
-          {checkout.tiers.length > 0 ? (
-            <ul className="mt-3 divide-y divide-(--border)">
-              {checkout.tiers.map((t) => (
-                <li key={t.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                  <span className="min-w-0 truncate font-medium">{t.name}</span>
-                  <span className="flex items-center gap-2">
+          <div className="mt-4 rounded-lg border border-(--border) bg-surface px-4 py-2 font-mono text-[13px]">
+            {checkout.tiers.length > 0 ? (
+              <ul>
+                {checkout.tiers.map((t) => (
+                  <li key={t.id} className="flex items-baseline gap-2 py-2">
+                    <span className="min-w-0 truncate font-sans text-sm font-medium">{t.name}</span>
                     {t.ctaText && (
-                      <span className="hidden max-w-[10rem] truncate text-xs text-muted sm:inline">“{t.ctaText}”</span>
+                      <span className="hidden max-w-[9rem] shrink-0 truncate text-xs text-muted sm:inline">
+                        &ldquo;{t.ctaText}&rdquo;
+                      </span>
                     )}
-                    <span className="tabular font-mono text-sm font-bold">{formatTierPrice(t)}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-3 text-sm text-muted">
-              {checkout.hasPricingSection
-                ? "A pricing section, but no readable plan names and prices."
-                : "No pricing section or /pricing page found. Try grading the pricing page directly."}
-            </p>
-          )}
-
-          <div className="mt-4 flex flex-wrap gap-1.5 text-xs">
-            {checkout.providers.length ? (
-              checkout.providers.map((p) => (
-                <Chip key={p} accent={p === "PayPal"}>
-                  {p}
-                </Chip>
-              ))
+                    <span aria-hidden className="min-w-4 flex-1 translate-y-[-3px] border-b border-dotted border-(--border-strong)" />
+                    <span className="tabular shrink-0 font-semibold">{formatTierPrice(t)}</span>
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <span className="text-muted">No payment provider detected</span>
+              <p className="py-2 font-sans text-sm text-muted">
+                {checkout.hasPricingSection
+                  ? "A pricing section, but no readable plan names and prices."
+                  : "No pricing section or /pricing page found. Try grading the pricing page directly."}
+              </p>
             )}
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-dashed border-(--border-strong) py-2.5 text-xs">
+              <span className="text-muted">Pay with</span>
+              {checkout.providers.length ? (
+                checkout.providers.map((p) => (
+                  <span key={p} className={p === "PayPal" ? "font-semibold" : ""}>
+                    {p}
+                  </span>
+                ))
+              ) : (
+                <span className="font-semibold text-grade-poor">No payment provider detected</span>
+              )}
+            </div>
           </div>
 
-          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+          <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
             {facts.map(([k, v]) => (
               <div key={k}>
-                <dt className="text-muted">{k}</dt>
-                <dd className="mt-0.5 font-medium text-foreground/90">{v}</dd>
+                <dt className="text-xs text-muted">{k}</dt>
+                <dd className="mt-0.5 font-medium">{v}</dd>
               </div>
             ))}
           </dl>
@@ -811,9 +863,17 @@ function hostPath(url: string): string {
 function FindingRow({ finding }: { finding: Finding }) {
   const isWin = finding.type === "win";
   return (
-    <li className="flex gap-2.5 text-sm leading-6">
-      <span className="mt-1 shrink-0" style={{ color: isWin ? "var(--grade-excellent)" : "var(--accent)" }}>
-        {isWin ? <Check aria-label="Working" size={15} weight="bold" /> : <ArrowRight aria-label="Fix" size={15} weight="bold" />}
+    <li className="grid grid-cols-[1.25rem_1fr] gap-2 text-sm leading-6">
+      <span
+        className={`mt-[3px] grid h-[18px] w-[18px] place-items-center rounded-[5px] ${
+          isWin ? "bg-grade-excellent/10 text-grade-excellent" : "bg-mark text-foreground"
+        }`}
+      >
+        {isWin ? (
+          <Check aria-label="Working" size={11} weight="bold" />
+        ) : (
+          <ArrowRight aria-label="Fix" size={11} weight="bold" />
+        )}
       </span>
       <span className="text-pretty text-foreground/85">{finding.text}</span>
     </li>
