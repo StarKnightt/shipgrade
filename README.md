@@ -61,6 +61,29 @@ branch. The original six-dimension grader is unchanged in spirit.
   `sandbox`. Without credentials, every PayPal surface shows a clear "not
   configured" state, and `PAYPAL_DRY_RUN=true` simulates the agent end to end.
 
+## How PayPal and AI work together
+
+The live demo runs on **Groq**, through its OpenAI-compatible API:
+
+- `qwen/qwen3.8-27b` drives the checkout agent. It drafts the catalog from the
+  prices on the page and, after a human approves, calls the PayPal Agent
+  Toolkit to create the product and plans in the sandbox.
+- `openai/gpt-oss-120b` writes the verdict and the checkout explanation.
+
+The AI can rename plans and write descriptions, but it cannot change a price.
+Every tool call is checked against the approved catalog before it reaches
+PayPal. If the model is rate limited, a rule engine finishes the job, and the
+UI labels which calls the AI made and which the rules made.
+
+To run it on Groq, set these in `.env.local`:
+
+```bash
+OPENAI_API_KEY=your-groq-key
+OPENAI_BASE_URL=https://api.groq.com/openai/v1
+OPENAI_MODEL=openai/gpt-oss-120b
+OPENAI_AGENT_MODEL=qwen/qwen3.8-27b
+```
+
 ## How it works
 
 The server fetches the page and extracts the signals a product reviewer reads
@@ -79,6 +102,7 @@ present. The app is fully functional without it.
 - **TypeScript**, **Vitest**
 - **PayPal Agent Toolkit**, **PayPal JS SDK v6**, PayPal REST (Orders v2,
   Catalog Products, Subscriptions, Invoicing, Webhooks)
+- **Groq** for the AI agent and verdict
 - Deployed on **Vercel**
 
 ## Local development
